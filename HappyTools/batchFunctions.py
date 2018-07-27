@@ -10,7 +10,6 @@ from scipy.signal import argrelextrema
 from tkinter import StringVar, Toplevel, Label
 import bisect
 import glob
-import math
 import numpy as np
 import operator
 import os
@@ -21,46 +20,23 @@ import tkinter.messagebox
 # Test imports
 import matplotlib.pyplot as plt
 # Custom libraries
+import Chromatogram
+import crap
+import gui
+import settings
+from util import PowerLawCall
+
 sys.path.append('..')
 import functions
 import HappyTools
 
 # Defines
-EXCLUSION_FILES = ["LICENSE.txt","CHANGELOG.txt"]
-CALIBRATION_FILETYPES = ["*.txt","*.arw"]
+EXCLUSION_FILES = ["LICENSE.txt", "CHANGELOG.txt"]
+CALIBRATION_FILETYPES = ["*.txt", "*.arw"]
 INTEGRATION_FILETYPES = ["calibrated*.txt"]
 
-# Functions
-def baselineCorrection(data):
-    """ TODO
-    """
-
-    # Baseline determination
-    background = []
-    chunks = [data[x:x+functions.points] for x in range(0, len(data), functions.points)]
-    for i in chunks:
-        buff1, buff2 = list(zip(*i))
-        min_index, min_value = min(enumerate(buff2), key=operator.itemgetter(1))
-        if buff1[0] > functions.start and buff1[-1] < functions.end:
-            background.append((buff1[min_index], buff2[min_index]))
-    time, intensity = list(zip(*background))
-    newX = np.linspace(min(time), max(time),100)
-    func = np.polyfit(time, intensity, functions.baselineOrder)
-    p = np.poly1d(func)
-
-    # Transform
-    x = [a for a,b in data]
-    newChromIntensity = [b-p(a) for a,b in data]
-
-    # Uplift
-    foo1, foo2 = list(zip(*data))
-    start = bisect.bisect_left(foo1, functions.start)
-    end = bisect.bisect_right(foo1, functions.end)
-    offset = abs(min(min(newChromIntensity[start:end]),0))
-    newData = list(zip(foo1,[x+offset for x in newChromIntensity]))
-
-    # Return corrected data
-    return newData
+createFigure = "True"
+minPeakSN = 27
 
 
 
@@ -68,7 +44,7 @@ def batchCalibrationControl(data, calFile):
     """ TODO 
     """
     # Get calibration values
-    refPeaks = functions.getPeakList(calFile.get())
+    refPeaks = Chromatogram.getPeakList(calFile.get())
 
     # Get observed times
     timePairs = determineTimepairs(refPeaks, data)
@@ -78,6 +54,7 @@ def batchCalibrationControl(data, calFile):
 
     # Return calibrated data
     return calibratedData
+
 
 def batchProcess(calFile, analFile, batchFolder):
     """ TODO
@@ -112,65 +89,70 @@ def batchProcess(calFile, analFile, batchFolder):
     if calFile.get() != "":
         filesGrabbed = []
         for files in CALIBRATION_FILETYPES:
-            for file in glob.glob(os.path.join(batchFolder.get(),files)):
+            for file in glob.glob(os.path.join(batchFolder.get(), files)):
                 if file not in EXCLUSION_FILES:
-                    filesGrabbed.append(os.path.join(batchFolder.get(),file))
-        for index,file in enumerate(filesGrabbed):
-            functions.updateProgressBar(progressbar, calPerc, index, len(filesGrabbed))
+                    filesGrabbed.append(os.path.join(batchFolder.get(), file))
+        for index, file in enumerate(filesGrabbed):
+            gui.update_progress_bar(progressbar, calPerc, index, len(filesGrabbed))
             try:
                 if HappyTools.logging == True and HappyTools.logLevel >= 1:
-                    with open(HappyTools.logFile,'a') as fw:
-                        fw.write(str(datetime.now().replace(microsecond=0))+"\tCalibrating file: "+str(file)+"\n")
-                data = {'Data':functions.openChrom(file),'Name':file}
+                    with open(HappyTools.logFile, 'a') as fw:
+                        fw.write(str(datetime.now().replace(microsecond=0)) + "\tCalibrating file: " + str(file) + "\n")
+                data = {'Data': crap.openChrom(file), 'Name': file}
                 data['Data'] = baselineCorrection(data['Data'])
                 # This is some custom code to quantify blancs (if desired)
-                #if 'blank' in data['Name'].lower() or 'blanc' in data['Name'].lower():
-                    #pass
-                #else:
-                    #data['Data'] = batchChromCalibration(data['Data'], calFile)
+                # if 'blank' in data['Name'].lower() or 'blanc' in data['Name'].lower():
+                # pass
+                # else:
+                # data['Data'] = batchChromCalibration(data['Data'], calFile)
                 # Must be a better way of doing this
                 foo = batchCalibrationControl(data['Data'], calFile)
                 data['Data'] = foo['Data']
                 data['Function'] = foo['Function']
-                if data['Data'] == None:
+                if data['Data'] is None:
                     continue
-                data['Name'] = os.path.join(batchFolder.get(), "calibrated_"+os.path.basename(data['Name']))
+                data['Name'] = os.path.join(batchFolder.get(), "calibrated_" + os.path.basename(data['Name']))
                 writeData(batchFolder, data)
             except ValueError:
                 if HappyTools.logging == True and HappyTools.logLevel >= 1:
-                    with open(HappyTools.logFile,'a') as fw:
-                        fw.write(str(datetime.now().replace(microsecond=0))+"\tIgnoring file: "+str(file)+" for calibration\n")
+                    with open(HappyTools.logFile, 'a') as fw:
+                        fw.write(str(datetime.now().replace(microsecond=0)) + "\tIgnoring file: " + str(
+                            file) + " for calibration\n")
                 pass
-    functions.updateProgressBar(progressbar, calPerc, 1, 1)
+    gui.update_progress_bar(progressbar, calPerc, 1, 1)
     # Integration
     if analFile.get() != "":
         try:
             filesGrabbed = []
             for files in INTEGRATION_FILETYPES:
-                for file in glob.glob(os.path.join(batchFolder.get(),files)):
+                for file in glob.glob(os.path.join(batchFolder.get(), files)):
                     if file not in EXCLUSION_FILES:
-                        filesGrabbed.append(os.path.join(batchFolder.get(),file))
-            for index,file in enumerate(filesGrabbed):
-                functions.updateProgressBar(progressbar2, intPerc, index, len(filesGrabbed))
+                        filesGrabbed.append(os.path.join(batchFolder.get(), file))
+            for index, file in enumerate(filesGrabbed):
+                gui.update_progress_bar(progressbar2, intPerc, index, len(filesGrabbed))
                 if HappyTools.logging == True and HappyTools.logLevel >= 1:
-                    with open(HappyTools.logFile,'a') as fw:
-                        fw.write(str(datetime.now().replace(microsecond=0))+"\tQuantifying file: "+str(file)+"\n")
-                data = {'Data':functions.openChrom(file),'Name':file}
+                    with open(HappyTools.logFile, 'a') as fw:
+                        fw.write(str(datetime.now().replace(microsecond=0)) + "\tQuantifying file: " + str(file) + "\n")
+                data = {'Data': crap.openChrom(file), 'Name': file}
                 batchQuantitationControl(data, analFile, batchFolder)
         except ValueError:
             if HappyTools.logging == True and HappyTools.logLevel >= 1:
-                with open(HappyTools.logFile,'a') as fw:
-                    fw.write(str(datetime.now().replace(microsecond=0))+"\tIgnoring file: "+str(file)+" for quantitation. " \
-                        "The 'Start' or 'End' parameter do not match the specified analytes.\n")
-            pass    
-        functions.updateProgressBar(progressbar2, intPerc, 1, 1)
+                with open(HappyTools.logFile, 'a') as fw:
+                    fw.write(str(datetime.now().replace(microsecond=0)) + "\tIgnoring file: " + str(
+                        file) + " for quantitation. " \
+                                "The 'Start' or 'End' parameter do not match the specified analytes.\n")
+            pass
+        gui.update_progress_bar(progressbar2, intPerc, 1, 1)
 
         if HappyTools.logging == True and HappyTools.logLevel >= 1:
-            with open(HappyTools.logFile,'a') as fw:
-               fw.write(str(datetime.now().replace(microsecond=0))+"\tCreating summary file\n")
+            with open(HappyTools.logFile, 'a') as fw:
+                fw.write(str(datetime.now().replace(microsecond=0)) + "\tCreating summary file\n")
         combineResults(batchFolder)
     end = datetime.now()
-    tkinter.messagebox.showinfo("Status Message", "Batch Process finished on "+str(end)+" and took a total time of "+str(end-start))
+    tkinter.messagebox.showinfo("Status Message",
+                                "Batch Process finished on " + str(end) + " and took a total time of " + str(
+                                    end - start))
+
 
 def batchQuantitationControl(data, analFile, batchFolder):
     """Quantify the current chromatogram and write results to disk.
@@ -194,13 +176,14 @@ def batchQuantitationControl(data, analFile, batchFolder):
     data -- list of (time,intensity) tuples
     analFile -- unicode string
     """
-    peaks = functions.getPeakList(analFile.get())
+    peaks = Chromatogram.getPeakList(analFile.get())
     time, intensity = list(zip(*data['Data']))
     results = []
 
     # Plot chromatogram region of interest (check if X[0] and X[-1] can be found before start)
-    if functions.createFigure == "True" and bisect.bisect_left(time,functions.start) and bisect.bisect_right(time,functions.end):
-        pdf = PdfPages(os.path.join(batchFolder.get(),os.path.splitext(os.path.basename(data['Name']))[0]+".pdf"))
+    if functions.createFigure == "True" and bisect.bisect_left(time, settings.start) and bisect.bisect_right(time,
+                                                                                                             settings.end):
+        pdf = PdfPages(os.path.join(batchFolder.get(), os.path.splitext(os.path.basename(data['Name']))[0] + ".pdf"))
         plotOverview(pdf, peaks, data, time, intensity)
 
     for i in peaks:
@@ -212,27 +195,27 @@ def batchQuantitationControl(data, analFile, batchFolder):
         height = 0
         signalNoise = "NAN"
         residual = "NAN"
-        fwhm = {'fwhm':0, 'width':0, 'center':0}
+        fwhm = {'fwhm': 0, 'width': 0, 'center': 0}
 
         # Get time boundaries
-        low = bisect.bisect_left(time,i[1]-i[2])
-        high = bisect.bisect_right(time,i[1]+i[2])
+        low = bisect.bisect_left(time, i[1] - i[2])
+        high = bisect.bisect_right(time, i[1] + i[2])
 
         # Get signal-to-noise
-        lowBackground = bisect.bisect_left(time,max(i[1]-functions.backgroundWindow,functions.start))
-        highBackground = bisect.bisect_right(time,min(i[1]+functions.backgroundWindow,functions.end))
+        lowBackground = bisect.bisect_left(time, max(i[1] - settings.backgroundWindow, settings.start))
+        highBackground = bisect.bisect_right(time, min(i[1] + settings.backgroundWindow, settings.end))
         backgroundData = intensity[lowBackground:highBackground]
-        if functions.backgroundNoiseMethod == "NOBAN":
-            NOBAN = functions.noban(backgroundData)
-        elif functions.backgroundNoiseMethod == "MT":
-            NOBAN = functions.backgroundNoise(backgroundData)
-        signalNoise = (max(intensity[low:high])-NOBAN['Background'])/NOBAN['Noise']
+        if settings.backgroundNoiseMethod == "NOBAN":
+            NOBAN = Chromatogram.noban(backgroundData)
+        elif settings.backgroundNoiseMethod == "MT":
+            NOBAN = crap.background_noise(backgroundData)
+        signalNoise = (max(intensity[low:high]) - NOBAN['Background']) / NOBAN['Noise']
 
         # Get peak Area
-        for index,j in enumerate(intensity[low:high]):
+        for index, j in enumerate(intensity[low:high]):
             try:
-                peakArea += max(j,0) * (time[low+index]-time[low+index-1])
-                backgroundArea += max(NOBAN['Background'],0) * (time[low+index]-time[low+index-1])
+                peakArea += max(j, 0) * (time[low + index] - time[low + index - 1])
+                backgroundArea += max(NOBAN['Background'], 0) * (time[low + index] - time[low + index - 1])
             except IndexError:
                 continue
         peakNoise = np.std(intensity[low:high])
@@ -240,7 +223,7 @@ def batchQuantitationControl(data, analFile, batchFolder):
         # Get breakpoints (where f'(x) == 0)
         x_data = np.array(time[low:high])
         y_data = np.array(intensity[low:high])
-        newX = np.linspace(x_data[0], x_data[-1], 2500*(x_data[-1]-x_data[0]))
+        newX = np.linspace(x_data[0], x_data[-1], 2500 * (x_data[-1] - x_data[0]))
         f = InterpolatedUnivariateSpline(x_data, y_data)
         fPrime = f.derivative()
         newY = f(newX)
@@ -266,11 +249,11 @@ def batchQuantitationControl(data, analFile, batchFolder):
             pass
         # Regions between breaks[x] and breaks[x+1]
         try:
-            for index,j in enumerate(breaks):
-                if max(newY[breaks[index]:breaks[index+1]]) > maxPoint:
-                    maxPoint = max(newY[breaks[index]:breaks[index+1]])
-                    xData = newX[breaks[index]:breaks[index+1]]
-                    yData = [x - max(NOBAN['Background'],0) for x in newY[breaks[index]:breaks[index+1]]]
+            for index, j in enumerate(breaks):
+                if max(newY[breaks[index]:breaks[index + 1]]) > maxPoint:
+                    maxPoint = max(newY[breaks[index]:breaks[index + 1]])
+                    xData = newX[breaks[index]:breaks[index + 1]]
+                    yData = [x - max(NOBAN['Background'], 0) for x in newY[breaks[index]:breaks[index + 1]]]
         except IndexError:
             pass
         # Region from break[-1] to newY[-1]
@@ -283,30 +266,34 @@ def batchQuantitationControl(data, analFile, batchFolder):
             pass
 
         # Gaussian fit on main points
-        peak = xData[yData > np.exp(-0.5)*max(yData)]
-        guess_sigma = 0.5*(max(peak) - min(peak))
-        newGaussX = np.linspace(x_data[0], x_data[-1], 2500*(x_data[-1]-x_data[0]))
-        p0 = [np.max(yData), xData[np.argmax(yData)],guess_sigma]
+        peak = xData[yData > np.exp(-0.5) * max(yData)]
+        guess_sigma = 0.5 * (max(peak) - min(peak))
+        newGaussX = np.linspace(x_data[0], x_data[-1], 2500 * (x_data[-1] - x_data[0]))
+        p0 = [np.max(yData), xData[np.argmax(yData)], guess_sigma]
         try:
-            coeff, var_matrix = curve_fit(functions.gaussFunction, xData, yData, p0)
-            newGaussY = functions.gaussFunction(newGaussX, *coeff)
+            coeff, var_matrix = curve_fit(Chromatogram.gaussFunction, xData, yData, p0)
+            newGaussY = Chromatogram.gaussFunction(newGaussX, *coeff)
             newGaussY = [x + NOBAN['Background'] for x in newGaussY]
-            for index,j in enumerate(intensity[low:high]):
-                gaussArea += max(functions.gaussFunction(time[low+index],*coeff),0) * (time[low+index]-time[low+index-1])
-            fwhm = functions.fwhm(coeff)
-            height = functions.gaussFunction(fwhm['center']+fwhm['width'], *coeff)+NOBAN['Background']
+            for index, j in enumerate(intensity[low:high]):
+                gaussArea += max(Chromatogram.gaussFunction(time[low + index], *coeff), 0) * (
+                            time[low + index] - time[low + index - 1])
+            fwhm = Chromatogram.fwhm(coeff)
+            height = Chromatogram.gaussFunction(fwhm['center'] + fwhm['width'], *coeff) + NOBAN['Background']
         except TypeError:
             if HappyTools.logging == True and HappyTools.logLevel > 1:
-                with open(HappyTools.logFile,'a') as fw:
-                    fw.write(str(datetime.now().replace(microsecond=0))+"\tNot enough data points to fit a Gaussian to peak: "+str(i[0])+"\n")
+                with open(HappyTools.logFile, 'a') as fw:
+                    fw.write(str(datetime.now().replace(
+                        microsecond=0)) + "\tNot enough data points to fit a Gaussian to peak: " + str(i[0]) + "\n")
         except RuntimeError:
             if HappyTools.logging == True and HappyTools.logLevel > 1:
-                with open(HappyTools.logFile,'a') as fw:
-                    fw.write(str(datetime.now().replace(microsecond=0))+"\tUnable to determine residuals for peak: "+str(i[1])+"\n")
+                with open(HappyTools.logFile, 'a') as fw:
+                    fw.write(
+                        str(datetime.now().replace(microsecond=0)) + "\tUnable to determine residuals for peak: " + str(
+                            i[1]) + "\n")
 
         # Determine Area
-        for index,j in enumerate(intensity[low:high]):
-            totalArea += max(j-NOBAN['Background'],0) * (time[low+index]-time[low+index-1])
+        for index, j in enumerate(intensity[low:high]):
+            totalArea += max(j - NOBAN['Background'], 0) * (time[low + index] - time[low + index - 1])
 
         # Determine Residual
         try:
@@ -318,44 +305,56 @@ def batchQuantitationControl(data, analFile, batchFolder):
         # Generate plot
         if functions.createFigure == "True" and residual != "NAN":
             if HappyTools.logging == True and HappyTools.logLevel >= 1:
-                with open(HappyTools.logFile,'a') as fw:
-                   fw.write(str(datetime.now().replace(microsecond=0))+"\tCreating figure for analyte: "+str(i[0])+"\n")
-            details = {'fwhm':fwhm, 'height':height, 'NOBAN':NOBAN, 'newData':list(zip(newX,newY)), 'newGauss':list(zip(newGaussX,newGaussY)), 
-                    'data':list(zip(time,intensity)), 'low':low, 'high':high, 'residual':residual, 'i':i}
+                with open(HappyTools.logFile, 'a') as fw:
+                    fw.write(str(datetime.now().replace(microsecond=0)) + "\tCreating figure for analyte: " + str(
+                        i[0]) + "\n")
+            details = {'fwhm': fwhm, 'height': height, 'NOBAN': NOBAN, 'newData': list(zip(newX, newY)),
+                       'newGauss': list(zip(newGaussX, newGaussY)),
+                       'data': list(zip(time, intensity)), 'low': low, 'high': high, 'residual': residual, 'i': i}
             plotIndividual(pdf, details)
 
-        results.append({'Peak':i[0], 'Time':i[1], 'Area':peakArea, 'PeakNoise':peakNoise, 'Residual':residual, 'S/N':signalNoise,
-                'Background':NOBAN['Background'],'Noise':NOBAN['Noise'],'BackgroundArea':backgroundArea, 'fwhm':fwhm['fwhm'],
-                'ActualTime':fwhm['center']})
+        results.append({'Peak': i[0], 'Time': i[1], 'Area': peakArea, 'PeakNoise': peakNoise, 'Residual': residual,
+                        'S/N': signalNoise,
+                        'Background': NOBAN['Background'], 'Noise': NOBAN['Noise'], 'BackgroundArea': backgroundArea,
+                        'fwhm': fwhm['fwhm'],
+                        'ActualTime': fwhm['center']})
     if functions.createFigure == "True":
         pdf.close()
 
     # Write results to disk
-    data['Name'] = os.path.splitext(os.path.basename(data['Name']))[0]+".raw"
-    with open(data['Name'],'w') as fw:
-        fw.write("Name\tTime\tPeak Area\tS/N\tBackground\tNoise\tGaussian Residual RMS\tPeak Noise\tBackground Area\tPeak Time\tFWHM\n")
+    data['Name'] = os.path.splitext(os.path.basename(data['Name']))[0] + ".raw"
+    with open(data['Name'], 'w') as fw:
+        fw.write(
+            "Name\tTime\tPeak Area\tS/N\tBackground\tNoise\tGaussian Residual RMS\tPeak Noise\tBackground Area\tPeak Time\tFWHM\n")
         for i in results:
-            fw.write(str(i['Peak'])+"\t"+str(i['Time'])+"\t"+str(i['Area'])+"\t"+str(i['S/N'])+"\t"+str(i['Background'])+"\t"+
-                    str(i['Noise'])+"\t"+str(i['Residual'])+"\t"+str(i['PeakNoise'])+"\t"+str(i['BackgroundArea'])+"\t"+
-                    str(i['ActualTime'])+"\t"+str(i['fwhm'])+"\n")
+            fw.write(str(i['Peak']) + "\t" + str(i['Time']) + "\t" + str(i['Area']) + "\t" + str(i['S/N']) + "\t" + str(
+                i['Background']) + "\t" +
+                     str(i['Noise']) + "\t" + str(i['Residual']) + "\t" + str(i['PeakNoise']) + "\t" + str(
+                i['BackgroundArea']) + "\t" +
+                     str(i['ActualTime']) + "\t" + str(i['fwhm']) + "\n")
+
 
 def combineResults(batchFolder):
     """ TODO
     """
     # Read the raw files and construct a data structure
     Results = []
-    for file in glob.glob(os.path.join(batchFolder.get(),"*.raw")):
+    for file in glob.glob(os.path.join(batchFolder.get(), "*.raw")):
         Buffer = []
-        with open(file,'r') as fr:
+        with open(file, 'r') as fr:
             fr.readline()
             for line in fr:
                 chunks = line.rstrip('\n').split('\t')
-                Buffer.append({'Peak':str(chunks[0]),'Time':float(chunks[1]),'Area':float(chunks[2]),'S/N':float(chunks[3]),
-                            'Background':float(chunks[4]),'Noise':float(chunks[5]),'Residual':float(chunks[6]),'PeakNoise':float(chunks[7]),
-                            'BackgroundArea':float(chunks[8]),'ActualTime':float(chunks[9]),'fwhm':float(chunks[10])})
-        with open(os.path.splitext(os.path.basename(file))[0]+".cal") as fr:
+                Buffer.append({'Peak': str(chunks[0]), 'Time': float(chunks[1]), 'Area': float(chunks[2]),
+                               'S/N': float(chunks[3]),
+                               'Background': float(chunks[4]), 'Noise': float(chunks[5]), 'Residual': float(chunks[6]),
+                               'PeakNoise': float(chunks[7]),
+                               'BackgroundArea': float(chunks[8]), 'ActualTime': float(chunks[9]),
+                               'fwhm': float(chunks[10])})
+        with open(os.path.splitext(os.path.basename(file))[0] + ".cal") as fr:
             formula = fr.readline()
-        Results.append({'File':str(os.path.splitext(os.path.basename(file))[0]), 'Calibration':str(formula), 'Data':Buffer})
+        Results.append(
+            {'File': str(os.path.splitext(os.path.basename(file))[0]), 'Calibration': str(formula), 'Data': Buffer})
 
     # Construct the filename for the output
     utc_datetime = datetime.utcnow()
@@ -366,29 +365,29 @@ def combineResults(batchFolder):
     header = ""
     for i in Results:
         for j in i['Data']:
-            header = header + "\t"+str(j['Peak'])
+            header = header + "\t" + str(j['Peak'])
         header = header + "\n"
         for j in i['Data']:
-            header = header + "\t"+str(j['Time'])
+            header = header + "\t" + str(j['Time'])
         header = header + "\n"
         break
 
     # Write results, settings and version information
-    with open(os.path.join(batchFolder.get(),filename),'w') as fw:
+    with open(os.path.join(batchFolder.get(), filename), 'w') as fw:
         # Metadata
         fw.write("HappyTools Settings\n")
-        fw.write("Version:\t"+str(HappyTools.version)+"\n")
-        fw.write("Build:\t"+str(HappyTools.build)+"\n")
-        fw.write("Start Time:\t"+str(functions.start)+"\n")
-        fw.write("End Time:\t"+str(functions.end)+"\n")
-        fw.write("Baseline Order:\t"+str(functions.baselineOrder)+"\n")
-        fw.write("Background Window:\t"+str(functions.backgroundWindow)+"\n")
-        fw.write("Background and noise method:\t"+str(functions.backgroundNoiseMethod)+"\n")
-        if functions.backgroundNoiseMethod == "MT":
-            fw.write("MT Slice Points:\t"+str(functions.slicepoints)+"\n")
-        elif functions.backgroundNoiseMethod == "NOBAN":
-            fw.write("NOBAN Initial Estimate:\t"+str(functions.nobanStart)+"\n")
-        fw.write("Noise:\t"+str(functions.noise)+"\n")
+        fw.write("Version:\t" + str(HappyTools.version) + "\n")
+        fw.write("Build:\t" + str(HappyTools.build) + "\n")
+        fw.write("Start Time:\t" + str(settings.start) + "\n")
+        fw.write("End Time:\t" + str(settings.end) + "\n")
+        fw.write("Baseline Order:\t" + str(settings.baselineOrder) + "\n")
+        fw.write("Background Window:\t" + str(settings.backgroundWindow) + "\n")
+        fw.write("Background and noise method:\t" + str(settings.backgroundNoiseMethod) + "\n")
+        if settings.backgroundNoiseMethod == "MT":
+            fw.write("MT Slice Points:\t" + str(settings.slicepoints) + "\n")
+        elif settings.backgroundNoiseMethod == "NOBAN":
+            fw.write("NOBAN Initial Estimate:\t" + str(functions.nobanStart) + "\n")
+        fw.write("Noise:\t" + str(settings.noise) + "\n")
         fw.write("\n")
 
         # Area (non background subtracted)
@@ -398,7 +397,7 @@ def combineResults(batchFolder):
             for i in Results:
                 fw.write(i['File'])
                 for j in i['Data']:
-                    fw.write("\t"+str(j['Area']))
+                    fw.write("\t" + str(j['Area']))
                 fw.write("\n")
             fw.write("\n")
 
@@ -409,7 +408,7 @@ def combineResults(batchFolder):
             for i in Results:
                 fw.write(i['File'])
                 for j in i['Data']:
-                    fw.write("\t"+str(max(j['Area']-j['BackgroundArea'],0)))
+                    fw.write("\t" + str(max(j['Area'] - j['BackgroundArea'], 0)))
                 fw.write("\n")
             fw.write("\n")
 
@@ -424,9 +423,9 @@ def combineResults(batchFolder):
                     total += j['Area']
                 for j in i['Data']:
                     try:
-                        fw.write("\t"+str(j['Area']/total))
+                        fw.write("\t" + str(j['Area'] / total))
                     except ZeroDivisionError:
-                        fw.write("\t"+str(0.0))
+                        fw.write("\t" + str(0.0))
                 fw.write("\n")
             fw.write("\n")
 
@@ -438,12 +437,12 @@ def combineResults(batchFolder):
                 fw.write(i['File'])
                 total = 0.
                 for j in i['Data']:
-                    total += max(j['Area']-j['BackgroundArea'],0)
+                    total += max(j['Area'] - j['BackgroundArea'], 0)
                 for j in i['Data']:
                     try:
-                        fw.write("\t"+str(max(j['Area']-j['BackgroundArea'],0)/total))
+                        fw.write("\t" + str(max(j['Area'] - j['BackgroundArea'], 0) / total))
                     except ZeroDivisionError:
-                        fw.write("\t"+str(0.0))
+                        fw.write("\t" + str(0.0))
                 fw.write("\n")
             fw.write("\n")
 
@@ -455,7 +454,7 @@ def combineResults(batchFolder):
                 fw.write(i['File'])
                 total = 0.
                 for j in i['Data']:
-                    fw.write("\t"+str(j['PeakNoise']))
+                    fw.write("\t" + str(j['PeakNoise']))
                 fw.write("\n")
             fw.write("\n")
 
@@ -466,7 +465,7 @@ def combineResults(batchFolder):
             for i in Results:
                 fw.write(i['File'])
                 for j in i['Data']:
-                    fw.write("\t"+str(j['Background']))
+                    fw.write("\t" + str(j['Background']))
                 fw.write("\n")
             fw.write("\n")
 
@@ -477,7 +476,7 @@ def combineResults(batchFolder):
             for i in Results:
                 fw.write(i['File'])
                 for j in i['Data']:
-                    fw.write("\t"+str(j['Noise']))
+                    fw.write("\t" + str(j['Noise']))
                 fw.write("\n")
             fw.write("\n")
 
@@ -488,7 +487,7 @@ def combineResults(batchFolder):
             for i in Results:
                 fw.write(i['File'])
                 for j in i['Data']:
-                    fw.write("\t"+str(j['S/N']))
+                    fw.write("\t" + str(j['S/N']))
                 fw.write("\n")
             fw.write("\n")
 
@@ -499,7 +498,7 @@ def combineResults(batchFolder):
             for i in Results:
                 fw.write(i['File'])
                 for j in i['Data']:
-                    fw.write("\t"+str(j['Residual']))
+                    fw.write("\t" + str(j['Residual']))
                 fw.write("\n")
             fw.write("\n")
 
@@ -510,7 +509,7 @@ def combineResults(batchFolder):
             for i in Results:
                 fw.write(i['File'])
                 for j in i['Data']:
-                    fw.write("\t"+str(j['fwhm']))
+                    fw.write("\t" + str(j['fwhm']))
                 fw.write("\n")
             fw.write("\n")
 
@@ -521,10 +520,10 @@ def combineResults(batchFolder):
             for i in Results:
                 fw.write(i['File'])
                 if i['Calibration']:
-                    fw.write(" ["+str(i['Calibration'])+"]")
+                    fw.write(" [" + str(i['Calibration']) + "]")
                 for j in i['Data']:
                     residualTime = abs(float(j['ActualTime']) - float(j['Time']))
-                    fw.write("\t"+str(residualTime))
+                    fw.write("\t" + str(residualTime))
                 fw.write("\n")
             fw.write("\n")
 
@@ -535,9 +534,10 @@ def combineResults(batchFolder):
             for i in Results:
                 fw.write(i['File'])
                 for j in i['Data']:
-                    fw.write("\t"+str(float(j['ActualTime'])))
+                    fw.write("\t" + str(float(j['ActualTime'])))
                 fw.write("\n")
             fw.write("\n")
+
 
 def determineTimepairs(refPeaks, data):
     """ TODO
@@ -545,46 +545,51 @@ def determineTimepairs(refPeaks, data):
     time, intensity = list(zip(*data))
     timePairs = []
     for i in refPeaks:
-        low = bisect.bisect_left(time, i[1]-i[2])
-        high = bisect.bisect_right(time, i[1]+i[2])
-        lowBackground = bisect.bisect_left(time, max(i[1]-functions.backgroundWindow,functions.start))
-        highBackground = bisect.bisect_right(time, min(i[1]+functions.backgroundWindow,functions.end))
-        if functions.backgroundNoiseMethod == "NOBAN":
-            NOBAN = functions.noban(intensity[lowBackground:highBackground])
-        elif functions.backgroundNoiseMethod == "MT":
-            NOBAN = functions.backgroundNoise(intensity[lowBackground:highBackground])
+        low = bisect.bisect_left(time, i[1] - i[2])
+        high = bisect.bisect_right(time, i[1] + i[2])
+        lowBackground = bisect.bisect_left(time, max(i[1] - settings.backgroundWindow, settings.start))
+        highBackground = bisect.bisect_right(time, min(i[1] + settings.backgroundWindow, settings.end))
+        if settings.backgroundNoiseMethod == "NOBAN":
+            NOBAN = Chromatogram.noban(intensity[lowBackground:highBackground])
+        elif settings.backgroundNoiseMethod == "MT":
+            NOBAN = crap.background_noise(intensity[lowBackground:highBackground])
         max_value = max(intensity[low:high])
         max_index = intensity[low:high].index(max_value)
-        if ((max_value - NOBAN['Background'])/NOBAN['Noise']) >= functions.minPeakSN:
-            timePairs.append((i[1],time[low+max_index]))
+        if ((max_value - NOBAN['Background']) / NOBAN['Noise']) >= functions.minPeakSN:
+            timePairs.append((i[1], time[low + max_index]))
     return timePairs
+
 
 def performCalibration(timePairs, data):
     """ TODO
     """
     time, intensity = list(zip(*data))
     try:
-        if len(timePairs) >= functions.minPeaks:
+        if len(timePairs) >= settings.minPeaks:
             expectedTime, observedTime = list(zip(*timePairs))
-            #z = np.polyfit(observedTime,expectedTime,2)
-            #f = np.poly1d(z)
-            f = functions.ultraPerformanceCalibration(observedTime,expectedTime,time[0], time[-1])
-            calibratedData = list(zip(f(time),intensity))
+            # z = np.polyfit(observedTime,expectedTime,2)
+            # f = np.poly1d(z)
+            f = Chromatogram.ultraPerformanceCalibration(observedTime, expectedTime, time[0], time[-1])
+            calibratedData = list(zip(f(time), intensity))
         else:
             calibratedData = None
             if HappyTools.logging == True and HappyTools.logLevel >= 1:
-                with open(HappyTools.logFile,'a') as fw:
-                     fw.write(str(datetime.now().replace(microsecond=0))+"\tFile not calibrated due to lack of features, "+
-                            str(len(timePairs))+" passed the minimum S/N ("+str(functions.minPeakSN)+") while "+str(functions.minPeaks)+
-                            " were needed\n")
+                with open(HappyTools.logFile, 'a') as fw:
+                    fw.write(
+                        str(datetime.now().replace(microsecond=0)) + "\tFile not calibrated due to lack of features, " +
+                        str(len(timePairs)) + " passed the minimum S/N (" + str(functions.minPeakSN) + ") while " + str(
+                            settings.minPeaks) +
+                        " were needed\n")
     except NameError:
         calibratedData = None
         if HappyTools.logging == True and HappyTools.logLevel >= 1:
-            with open(HappyTools.logFile,'a') as fw:
-                 fw.write(str(datetime.now().replace(microsecond=0))+"\tFile not calibrated due to lack of features, "+
-                        str(len(timePairs))+" passed the minimum S/N ("+str(functions.minPeakSN)+") while "+
-                        str(functions.minPeaks)+" were needed\n")  
-    return {"Data":calibratedData, "Function":f}
+            with open(HappyTools.logFile, 'a') as fw:
+                fw.write(
+                    str(datetime.now().replace(microsecond=0)) + "\tFile not calibrated due to lack of features, " +
+                    str(len(timePairs)) + " passed the minimum S/N (" + str(functions.minPeakSN) + ") while " +
+                    str(settings.minPeaks) + " were needed\n")
+    return {"Data": calibratedData, "Function": f}
+
 
 def plotIndividual(pdf, details):
     """ TODO
@@ -602,35 +607,40 @@ def plotIndividual(pdf, details):
     time, intensity = list(zip(*details['data']))
 
     # Plot
-    fig =  plt.figure(figsize=(8, 6))
+    fig = plt.figure(figsize=(8, 6))
     ax = fig.add_subplot(111)
     plt.plot(time[low:high], intensity[low:high], 'b*')
-    plt.plot((newX[0],newX[-1]),(NOBAN['Background'],NOBAN['Background']),'red')
-    plt.plot((newX[0],newX[-1]),(NOBAN['Background']+NOBAN['Noise'],NOBAN['Background']+NOBAN['Noise']),color='green')
-    plt.plot(newX,newY, color='blue',linestyle='dashed')
-    plt.plot(newGaussX, newGaussY, color='green',linestyle='dashed')
-    plt.plot((time[intensity[low:high].index(max(intensity[low:high]))+low],time[intensity[low:high].index(max(intensity[low:high]))+low]),
-            (NOBAN['Background'],max(intensity[low:high])),color='orange',linestyle='dotted')
-    plt.plot((min(max(fwhm['center']-fwhm['width'],newX[0]),newX[-1]),max(min(fwhm['center']+fwhm['width'],newX[-1]),newX[0])),
-            (height,height),color='red',linestyle='dashed')
-    plt.legend(['Raw Data','Background','Noise','Univariate Spline','Gaussian Fit ('+str(int(residual*100))+
-            '%)','Signal (S/N '+str(round((max(intensity[low:high])-NOBAN['Background'])/NOBAN['Noise'],1))+")",
-            "FWHM:"+"{0:.2f}".format(fwhm['fwhm'])], loc='best')
-    plt.title("Detail view: "+str(i[0]))
+    plt.plot((newX[0], newX[-1]), (NOBAN['Background'], NOBAN['Background']), 'red')
+    plt.plot((newX[0], newX[-1]), (NOBAN['Background'] + NOBAN['Noise'], NOBAN['Background'] + NOBAN['Noise']),
+             color='green')
+    plt.plot(newX, newY, color='blue', linestyle='dashed')
+    plt.plot(newGaussX, newGaussY, color='green', linestyle='dashed')
+    plt.plot((time[intensity[low:high].index(max(intensity[low:high])) + low],
+              time[intensity[low:high].index(max(intensity[low:high])) + low]),
+             (NOBAN['Background'], max(intensity[low:high])), color='orange', linestyle='dotted')
+    plt.plot((min(max(fwhm['center'] - fwhm['width'], newX[0]), newX[-1]),
+              max(min(fwhm['center'] + fwhm['width'], newX[-1]), newX[0])),
+             (height, height), color='red', linestyle='dashed')
+    plt.legend(['Raw Data', 'Background', 'Noise', 'Univariate Spline', 'Gaussian Fit (' + str(int(residual * 100)) +
+                '%)',
+                'Signal (S/N ' + str(round((max(intensity[low:high]) - NOBAN['Background']) / NOBAN['Noise'], 1)) + ")",
+                "FWHM:" + "{0:.2f}".format(fwhm['fwhm'])], loc='best')
+    plt.title("Detail view: " + str(i[0]))
     plt.xlabel("Retention Time [m]")
     plt.ylabel("Intensity [au]")
     pdf.savefig(fig)
     plt.close(fig)
 
+
 def plotOverview(pdf, peaks, data, time, intensity):
     """ TODO
     """
     d = pdf.infodict()
-    d['Title'] = 'PDF Report for: '+str(os.path.splitext(os.path.basename(data['Name']))[0])
-    d['Author'] = 'HappyTools version: '+str(HappyTools.version)+" build: "+str(HappyTools.build)
+    d['Title'] = 'PDF Report for: ' + str(os.path.splitext(os.path.basename(data['Name']))[0])
+    d['Author'] = 'HappyTools version: ' + str(HappyTools.version) + " build: " + str(HappyTools.build)
     d['CreationDate'] = datetime.now()
-    low = bisect.bisect_left(time,functions.start)
-    high = bisect.bisect_right(time,functions.end)
+    low = bisect.bisect_left(time, settings.start)
+    high = bisect.bisect_right(time, settings.end)
     fig = plt.figure(figsize=(8, 6))
     ax = fig.add_subplot(111)
     plt.plot(time[low:high], intensity[low:high], 'b-')
@@ -639,8 +649,8 @@ def plotOverview(pdf, peaks, data, time, intensity):
     plt.xlabel("Retention Time [m]")
     plt.ylabel("Intensity [au]")
     for i in peaks:
-        low = bisect.bisect_left(time,i[1]-i[2])
-        high = bisect.bisect_right(time,i[1]+i[2])
+        low = bisect.bisect_left(time, i[1] - i[2])
+        high = bisect.bisect_right(time, i[1] + i[2])
         newTime = np.linspace(time[low], time[high], len(time[low:high]))
         f = InterpolatedUnivariateSpline(time[low:high], intensity[low:high])
         newIntensity = f(newTime)
@@ -649,26 +659,132 @@ def plotOverview(pdf, peaks, data, time, intensity):
     pdf.savefig(fig)
     plt.close(fig)
 
+
 def writeData(batchFolder, data):
     """ TODO
     """
-    with open(os.path.join(batchFolder.get(),os.path.splitext(data['Name'])[0]+'.cal'),'w') as fw:
-        if isinstance(data['Function'],functions.powerLawCall):
+    with open(os.path.join(batchFolder.get(), os.path.splitext(data['Name'])[0] + '.cal'), 'w') as fw:
+        if isinstance(data['Function'], PowerLawCall.PowerLawCall):
             formula = data['Function'].describe()
-        elif isinstance(data['Function'],np.lib.polynomial.poly1d):
+        elif isinstance(data['Function'], np.lib.polynomial.poly1d):
             formula = ""
-            for index,i in enumerate(data['Function']):
+            for index, i in enumerate(data['Function']):
                 if index < len(data['Function']):
-                    formula += "{0:.2e}".format(i)+"x^"+str(len(data['Function'])-index)+" + "
+                    formula += "{0:.2e}".format(i) + "x^" + str(len(data['Function']) - index) + " + "
                 else:
                     formula += "{0:.2e}".format(i)
-        elif isinstance(data['Function'],Akima1DInterpolator):
+        elif isinstance(data['Function'], Akima1DInterpolator):
             formula = "Akima 1D Interpolation"
-        elif isinstance(data['Function'],PchipInterpolator):
+        elif isinstance(data['Function'], PchipInterpolator):
             formula = "Monotonic Piecewise Cubic Hermite Interpolating Polynomial"
         else:
             formula = "Unknown"
         fw.write(formula)
-    with open(os.path.join(batchFolder.get(),data['Name']),'w') as fw:
+    with open(os.path.join(batchFolder.get(), data['Name']), 'w') as fw:
         for i in data['Data']:
-            fw.write(str(format(i[0],'0.'+str(functions.decimalNumbers)+'f'))+"\t"+str(format(i[1],'0.'+str(functions.decimalNumbers)+'f'))+"\n")
+            fw.write(
+                str(format(i[0], '0.' + str(settings.decimalNumbers) + 'f')) + "\t" + str(format(i[1], '0.' + str(
+                    settings.decimalNumbers) + 'f')) + "\n")
+
+
+
+def batchPlot(fig, canvas):
+    """Read and plot all chromatograms in a directory.
+
+    This function asks the user to select a directory from which the
+    function will read all the files that are specified in the
+    CALIBRATION_FILETYPES paramater of the batchFunctions file and plot
+    them to the canvas.
+
+    Keyword arguments:
+    fig -- matplotlib figure object
+    canvas -- tkinter canvas object
+    """
+    folder_path = tkinter.filedialog.askdirectory()
+    if folder_path:
+        filesGrabbed = []
+        for files in batchFunctions.CALIBRATION_FILETYPES:
+            for file in glob.glob(str(os.path.join(folder_path, files))):
+                if os.path.basename(file) not in batchFunctions.EXCLUSION_FILES:
+                    if openChrom(file):
+                        filesGrabbed.append(file)
+
+        data = []
+        for file in filesGrabbed:
+            data.append((str(file), openChrom(file)))
+
+        if data:
+            fig.clear()
+            axes = fig.add_subplot(111)
+            for i in data:
+                x_array, y_array = list(zip(*i[1]))
+                axes.plot(x_array, y_array, label=str(os.path.split(i[0])[-1]))
+            axes.legend()
+        canvas.draw()
+
+def batchPlotNorm(fig, canvas):
+    """Read and plot all chromatograms in a directory.
+
+    This function asks the user to select a directory from which the
+    function will read all the files that are specified in the
+    CALIBRATION_FILETYPES paramater of the batchFunctions file. The
+    function will then find the lowest and maximum intensities between
+    the start and end variable, normalize all chromatograms and plot
+    them to the canvas.
+
+    Keyword arguments:
+    fig -- matplotlib figure object
+    canvas -- tkinter canvas object
+    """
+    folder_path = tkinter.filedialog.askdirectory()
+    if folder_path:
+        filesGrabbed = []
+        for files in batchFunctions.CALIBRATION_FILETYPES:
+            for file in glob.glob(str(os.path.join(folder_path, files))):
+                if os.path.basename(file) not in batchFunctions.EXCLUSION_FILES:
+                    if openChrom(file):
+                        filesGrabbed.append(file)
+
+        data = []
+        for file in filesGrabbed:
+            chromData = openChrom(file)
+
+            # Background determination
+            background = []
+            chunks = [chromData[x:x + points] for x in range(0, len(chromData), points)]
+            for i in chunks:
+                buff1, buff2 = list(zip(*i))
+                min_index, min_value = min(enumerate(buff2), key=operator.itemgetter(1))
+                if buff1[0] > start and buff1[-1] < end:
+                    background.append((buff1[min_index], buff2[min_index]))
+            time, intensity = list(zip(*background))
+            newX = np.linspace(min(time), max(time), 100)
+            func = np.polyfit(time, intensity, baselineOrder)
+            p = np.poly1d(func)
+
+            # Transform
+            time = [a for a, b in chromData]
+            newChromIntensity = [b - p(a) for a, b in chromData]
+
+            # Uplift
+            low = bisect.bisect_left(time, start)
+            high = bisect.bisect_right(time, end)
+            offset = abs(min(min(newChromIntensity[low:high]), 0))
+            newIntensity = [x + offset for x in newChromIntensity]
+
+            # Normalize
+            correction = max(newIntensity[low:high])
+            normIntensity = [x / correction for x in newIntensity]
+            newData = list(zip(time, normIntensity))
+            data.append((str(file), newData))
+
+        # Plot
+        if data:
+            fig.clear()
+            axes = fig.add_subplot(111)
+            for i in data:
+                x_array, y_array = list(zip(*i[1]))
+                axes.plot(x_array, y_array, label=str(os.path.split(i[0])[-1]))
+            axes.legend()
+        canvas.draw()
+
