@@ -1,5 +1,5 @@
 #! /usr/bin/env python
-#
+
 # Copyright 2017-2018 Bas C. Jansen
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,7 +12,7 @@
 # limitations under the License.
 #
 # You should have received a copy of the Apache 2.0 license along
-# with this program; if not, see 
+# with this program; if not, see
 # http://www.apache.org/licenses/LICENSE-2.0
 
 # General imports
@@ -33,7 +33,12 @@ import functions
 # Innate variables
 version = "0.0.2"
 build = "180725a"
-directories = [os.path.join(os.getcwd(),"libs"),os.path.join(os.getcwd(),"temp"),os.path.join(os.getcwd(),"plugins"),os.path.join(os.getcwd(),"ui")]
+directories = [
+    os.path.join(os.getcwd(),"libs"),
+    os.path.join(os.getcwd(),"temp"),
+    os.path.join(os.getcwd(),"plugins"),
+    os.path.join(os.getcwd(),"ui")
+]
 
 # General variables
 output = "summary.results"
@@ -53,7 +58,7 @@ matplotlib.backends.backend_tkagg.NavigationToolbar2TkAgg.dynamic_update = dynam
 class CustomToolbar(NavigationToolbar2TkAgg):
     def plot_axes(self):
         def close():
-            try:    
+            try:
                 self.canvas.figure.axes[0].set_xlim([float(XMinWindow.get()),float(XMaxWindow.get())])
             except ValueError:
                 pass
@@ -63,7 +68,7 @@ class CustomToolbar(NavigationToolbar2TkAgg):
                 pass
             self.canvas.draw()
             top.destroy()
-        self.push_current()        
+        self.push_current()
         top = Tk.top = Toplevel()
         top.title("Configure Axes")
         top.protocol( "WM_DELETE_WINDOW", lambda: close())
@@ -97,13 +102,7 @@ class CustomToolbar(NavigationToolbar2TkAgg):
 
 # Applicatiom
 class App():
-
     def __init__(self, master):
-        # ACCESS CHECK
-        if not functions.checkAccess(directories):
-            tkinter.messagebox.showinfo("Access Error", "HappyTools does not have sufficient disk access rights. Please close "+
-                    "HappyTools and check if the current user has read/write access to all folders in the Happytools "+
-                    "folder.")
         # SETTINGS
         if os.path.isfile(settings):
             functions.getSettings()
@@ -118,6 +117,7 @@ class App():
         # FRAME
         frame = Frame(master)
         master.title("HappyTools "+str(version))
+
         if os.path.isfile(os.path.join(".","ui","Icon.ico")):
             master.iconbitmap(default=os.path.join(".","ui","Icon.ico"))
         if os.path.isfile(os.path.join(".","ui","UI.png")):
@@ -126,7 +126,7 @@ class App():
             background_image.axis('off')
             self.fig.set_tight_layout(True)
             background_image.imshow(image)
-        
+
         # QUIT
         def close():
             functions.fileCleanup()
@@ -148,11 +148,14 @@ class App():
         filemenu.add_command(label="Save Chromatogram", command=functions.saveChrom)
         filemenu.add_command(label="Overlay Quantitation Windows", command=lambda: functions.overlayQuantitationWindows(self.fig, self.canvas))
         filemenu.add_command(label="Quantify Chromatogram", command=lambda: functions.quantifyChrom(self.fig, self.canvas))
+        filemenu.add_command(label="Settings", command=functions.settingsPopup)
+        filemenu.add_command(label="About HappyTools", command=lambda: functions.infoPopup())
 
         multimenu = Menu(menu, tearoff=0)
         menu.add_cascade(label="Multi File", menu=multimenu)
         multimenu.add_command(label="Raw Batch Plot", command=lambda: functions.batchPlot(self.fig, self.canvas))
         multimenu.add_command(label="Normalized Batch Plot", command=lambda: functions.batchPlotNorm(self.fig, self.canvas))
+        multimenu.add_command(label="Batch Process", command=functions.batchPopup)
 
         advancedmenu = Menu(menu, tearoff=0)
         menu.add_cascade(label="Advanced Tools", menu=advancedmenu)
@@ -160,11 +163,10 @@ class App():
         advancedmenu.add_command(label="Save Calibrants", command=lambda: functions.saveCalibrants(self.fig, self.canvas))
         advancedmenu.add_command(label="Save Annotation", command=lambda: functions.saveAnnotation(self.fig, self.canvas))
 
-        menu.add_command(label="Batch Process", command=functions.batchPopup)
 
-        menu.add_command(label="Settings", command=functions.settingsPopup)
 
-        menu.add_command(label="About HappyTools", command=lambda: functions.infoPopup())
+
+
 
         if glob.glob(os.path.join(".","plugins","*.py")):
             import importlib
