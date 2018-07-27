@@ -1,7 +1,7 @@
 #! /usr/bin/env python
 
 # General imports
-from Tkinter import *
+from tkinter import *
 
 def start():
     def close():

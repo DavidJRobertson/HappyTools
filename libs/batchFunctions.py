@@ -7,7 +7,7 @@ from scipy.interpolate import InterpolatedUnivariateSpline
 from scipy.interpolate import PchipInterpolator, Akima1DInterpolator
 from scipy.optimize import curve_fit
 from scipy.signal import argrelextrema
-from Tkinter import StringVar, Toplevel, Label
+from tkinter import StringVar, Toplevel, Label
 import bisect
 import glob
 import math
@@ -15,8 +15,8 @@ import numpy as np
 import operator
 import os
 import sys
-import ttk
-import tkMessageBox
+import tkinter.ttk
+import tkinter.messagebox
 
 # Test imports
 import matplotlib.pyplot as plt
@@ -37,13 +37,13 @@ def baselineCorrection(data):
 
     # Baseline determination
     background = []
-    chunks = [data[x:x+functions.points] for x in xrange(0, len(data), functions.points)]
+    chunks = [data[x:x+functions.points] for x in range(0, len(data), functions.points)]
     for i in chunks:
-        buff1, buff2 = zip(*i)
+        buff1, buff2 = list(zip(*i))
         min_index, min_value = min(enumerate(buff2), key=operator.itemgetter(1))
         if buff1[0] > functions.start and buff1[-1] < functions.end:
             background.append((buff1[min_index], buff2[min_index]))
-    time, intensity = zip(*background)
+    time, intensity = list(zip(*background))
     newX = np.linspace(min(time), max(time),100)
     func = np.polyfit(time, intensity, functions.baselineOrder)
     p = np.poly1d(func)
@@ -53,11 +53,11 @@ def baselineCorrection(data):
     newChromIntensity = [b-p(a) for a,b in data]
 
     # Uplift
-    foo1, foo2 = zip(*data)
+    foo1, foo2 = list(zip(*data))
     start = bisect.bisect_left(foo1, functions.start)
     end = bisect.bisect_right(foo1, functions.end)
     offset = abs(min(min(newChromIntensity[start:end]),0))
-    newData = zip(foo1,[x+offset for x in newChromIntensity])
+    newData = list(zip(foo1,[x+offset for x in newChromIntensity]))
 
     # Return corrected data
     return newData
@@ -93,19 +93,19 @@ def batchProcess(calFile, analFile, batchFolder):
     barWindow.title("Progress Bar")
     cal = Label(barWindow, text="Calibration", padx=25)
     cal.grid(row=0, column=0, sticky="W")
-    ft = ttk.Frame(barWindow)
+    ft = tkinter.ttk.Frame(barWindow)
     ft.grid(row=1, columnspan=2, sticky="")
     perc1 = Label(barWindow, textvariable=calPerc)
     perc1.grid(row=0, column=1, padx=25)
-    progressbar = ttk.Progressbar(ft, length=100, mode='determinate')
+    progressbar = tkinter.ttk.Progressbar(ft, length=100, mode='determinate')
     progressbar.grid(row=1, columnspan=2, sticky="")
     ext = Label(barWindow, text="Integration", padx=25)
     ext.grid(row=2, column=0, sticky="W")
-    ft2 = ttk.Frame(barWindow)
+    ft2 = tkinter.ttk.Frame(barWindow)
     ft2.grid(row=3, columnspan=2, sticky="")
     perc2 = Label(barWindow, textvariable=intPerc)
     perc2.grid(row=2, column=1, padx=25)
-    progressbar2 = ttk.Progressbar(ft2, length=100, mode='determinate')
+    progressbar2 = tkinter.ttk.Progressbar(ft2, length=100, mode='determinate')
     progressbar2.grid(row=3, columnspan=2, sticky="")
 
     # Calibration   
@@ -170,7 +170,7 @@ def batchProcess(calFile, analFile, batchFolder):
                fw.write(str(datetime.now().replace(microsecond=0))+"\tCreating summary file\n")
         combineResults(batchFolder)
     end = datetime.now()
-    tkMessageBox.showinfo("Status Message", "Batch Process finished on "+str(end)+" and took a total time of "+str(end-start))
+    tkinter.messagebox.showinfo("Status Message", "Batch Process finished on "+str(end)+" and took a total time of "+str(end-start))
 
 def batchQuantitationControl(data, analFile, batchFolder):
     """Quantify the current chromatogram and write results to disk.
@@ -195,7 +195,7 @@ def batchQuantitationControl(data, analFile, batchFolder):
     analFile -- unicode string
     """
     peaks = functions.getPeakList(analFile.get())
-    time, intensity = zip(*data['Data'])
+    time, intensity = list(zip(*data['Data']))
     results = []
 
     # Plot chromatogram region of interest (check if X[0] and X[-1] can be found before start)
@@ -320,8 +320,8 @@ def batchQuantitationControl(data, analFile, batchFolder):
             if HappyTools.logging == True and HappyTools.logLevel >= 1:
                 with open(HappyTools.logFile,'a') as fw:
                    fw.write(str(datetime.now().replace(microsecond=0))+"\tCreating figure for analyte: "+str(i[0])+"\n")
-            details = {'fwhm':fwhm, 'height':height, 'NOBAN':NOBAN, 'newData':zip(newX,newY), 'newGauss':zip(newGaussX,newGaussY), 
-                    'data':zip(time,intensity), 'low':low, 'high':high, 'residual':residual, 'i':i}
+            details = {'fwhm':fwhm, 'height':height, 'NOBAN':NOBAN, 'newData':list(zip(newX,newY)), 'newGauss':list(zip(newGaussX,newGaussY)), 
+                    'data':list(zip(time,intensity)), 'low':low, 'high':high, 'residual':residual, 'i':i}
             plotIndividual(pdf, details)
 
         results.append({'Peak':i[0], 'Time':i[1], 'Area':peakArea, 'PeakNoise':peakNoise, 'Residual':residual, 'S/N':signalNoise,
@@ -542,7 +542,7 @@ def combineResults(batchFolder):
 def determineTimepairs(refPeaks, data):
     """ TODO
     """
-    time, intensity = zip(*data)
+    time, intensity = list(zip(*data))
     timePairs = []
     for i in refPeaks:
         low = bisect.bisect_left(time, i[1]-i[2])
@@ -562,14 +562,14 @@ def determineTimepairs(refPeaks, data):
 def performCalibration(timePairs, data):
     """ TODO
     """
-    time, intensity = zip(*data)
+    time, intensity = list(zip(*data))
     try:
         if len(timePairs) >= functions.minPeaks:
-            expectedTime, observedTime = zip(*timePairs)
+            expectedTime, observedTime = list(zip(*timePairs))
             #z = np.polyfit(observedTime,expectedTime,2)
             #f = np.poly1d(z)
             f = functions.ultraPerformanceCalibration(observedTime,expectedTime,time[0], time[-1])
-            calibratedData = zip(f(time),intensity)
+            calibratedData = list(zip(f(time),intensity))
         else:
             calibratedData = None
             if HappyTools.logging == True and HappyTools.logLevel >= 1:
@@ -597,9 +597,9 @@ def plotIndividual(pdf, details):
     height = details['height']
     residual = details['residual']
     i = details['i']
-    newX, newY = zip(*details['newData'])
-    newGaussX, newGaussY = zip(*details['newGauss'])
-    time, intensity = zip(*details['data'])
+    newX, newY = list(zip(*details['newData']))
+    newGaussX, newGaussY = list(zip(*details['newGauss']))
+    time, intensity = list(zip(*details['data']))
 
     # Plot
     fig =  plt.figure(figsize=(8, 6))

@@ -11,7 +11,7 @@ from scipy.interpolate import PchipInterpolator, Akima1DInterpolator
 from scipy.optimize import curve_fit
 from scipy.signal import argrelextrema
 from scipy.signal import savgol_filter
-from Tkinter import *
+from tkinter import *
 import bisect
 import glob
 import math
@@ -21,8 +21,8 @@ import os
 import re
 import shutil
 import sys
-import tkFileDialog
-import tkMessageBox
+import tkinter.filedialog
+import tkinter.messagebox
 
 ####################
 # Custom libraries #
@@ -151,7 +151,7 @@ class ToolTip(object):
 def addFile(fig,canvas):
     """Ask for a file and draw it on the existing canvas."""
     data = readData()
-    file_path = tkFileDialog.askopenfilename()
+    file_path = tkinter.filedialog.askopenfilename()
     if not file_path:
         pass
     else:
@@ -159,7 +159,7 @@ def addFile(fig,canvas):
     fig.clear()
     axes = fig.add_subplot(111)
     for i in data:
-        x_array, y_array = zip(*i[1])
+        x_array, y_array = list(zip(*i[1]))
         axes.plot(x_array,y_array,label=str(os.path.split(i[0])[-1]))
     axes.legend()
     canvas.draw()
@@ -174,7 +174,7 @@ def backgroundNoise(data):
     Keyword arguments:
     data -- list of intensities
     """
-    background = sys.maxint
+    background = sys.maxsize
     currNoise = 0
     for index,i in enumerate(data[:-slicepoints]):
         buffer = data[index:index+slicepoints]
@@ -212,13 +212,13 @@ def baselineCorrection(fig,canvas):
 
     # Background determination
     background = []
-    chunks = [data[0][1][x:x+points] for x in xrange(0, len(data[0][1]), points)]
+    chunks = [data[0][1][x:x+points] for x in range(0, len(data[0][1]), points)]
     for i in chunks:
-        buff1, buff2 = zip(*i)
+        buff1, buff2 = list(zip(*i))
         min_index, min_value = min(enumerate(buff2), key=operator.itemgetter(1))
         if buff1[0] > start and buff1[-1] < end:
             background.append((buff1[min_index], buff2[min_index]))
-    time, intensity = zip(*background)
+    time, intensity = list(zip(*background))
     newX = np.linspace(min(time), max(time),100)
     func = np.polyfit(time, intensity, baselineOrder)
     p = np.poly1d(func)
@@ -231,7 +231,7 @@ def baselineCorrection(fig,canvas):
     low = bisect.bisect_left(time, start)
     high = bisect.bisect_right(time, end)
     offset = abs(min(min(newChromIntensity[low:high]),0))
-    newData = zip(time,[x+offset for x in newChromIntensity])
+    newData = list(zip(time,[x+offset for x in newChromIntensity]))
 
     # Plot & Write Data to Disk  
     multiData = [(os.path.split(data[0][0])[-1], data[0][1]),(os.path.split(data[0][0])[-1]+" (BC)",newData)]
@@ -286,7 +286,7 @@ def batchPlot(fig,canvas):
     fig -- matplotlib figure object
     canvas -- tkinter canvas object
     """
-    folder_path = tkFileDialog.askdirectory()
+    folder_path = tkinter.filedialog.askdirectory()
     if folder_path:
         filesGrabbed = []
         for files in batchFunctions.CALIBRATION_FILETYPES:
@@ -303,7 +303,7 @@ def batchPlot(fig,canvas):
             fig.clear()
             axes = fig.add_subplot(111)
             for i in data:
-                x_array, y_array = zip(*i[1])
+                x_array, y_array = list(zip(*i[1]))
                 axes.plot(x_array,y_array,label=str(os.path.split(i[0])[-1]))
             axes.legend()
         canvas.draw()
@@ -322,7 +322,7 @@ def batchPlotNorm(fig,canvas):
     fig -- matplotlib figure object
     canvas -- tkinter canvas object
     """
-    folder_path = tkFileDialog.askdirectory()
+    folder_path = tkinter.filedialog.askdirectory()
     if folder_path:
         filesGrabbed = []
         for files in batchFunctions.CALIBRATION_FILETYPES:
@@ -337,13 +337,13 @@ def batchPlotNorm(fig,canvas):
 
             # Background determination
             background = []
-            chunks = [chromData[x:x+points] for x in xrange(0, len(chromData), points)]
+            chunks = [chromData[x:x+points] for x in range(0, len(chromData), points)]
             for i in chunks:
-                buff1, buff2 = zip(*i)
+                buff1, buff2 = list(zip(*i))
                 min_index, min_value = min(enumerate(buff2), key=operator.itemgetter(1))
                 if buff1[0] > start and buff1[-1] < end:
                     background.append((buff1[min_index], buff2[min_index]))
-            time, intensity = zip(*background)
+            time, intensity = list(zip(*background))
             newX = np.linspace(min(time), max(time),100)
             func = np.polyfit(time, intensity, baselineOrder)
             p = np.poly1d(func)
@@ -361,7 +361,7 @@ def batchPlotNorm(fig,canvas):
             # Normalize
             correction = max(newIntensity[low:high])
             normIntensity = [x/correction for x in newIntensity]
-            newData = zip(time,normIntensity)
+            newData = list(zip(time,normIntensity))
             data.append((str(file),newData))
 
         # Plot
@@ -369,7 +369,7 @@ def batchPlotNorm(fig,canvas):
             fig.clear()
             axes = fig.add_subplot(111)
             for i in data:
-                x_array, y_array = zip(*i[1])
+                x_array, y_array = list(zip(*i[1]))
                 axes.plot(x_array,y_array,label=str(os.path.split(i[0])[-1]))
             axes.legend()
         canvas.draw()
@@ -398,17 +398,17 @@ def batchPopup():
     def setCalibrationFile():
         """Ask for the calibration file.
         """
-        calFile.set(tkFileDialog.askopenfilename(title="Calibration File"))
+        calFile.set(tkinter.filedialog.askopenfilename(title="Calibration File"))
 
     def setAnalyteFile():
         """Ask for the analyte file.
         """
-        analFile.set(tkFileDialog.askopenfilename(title="Analyte File"))
+        analFile.set(tkinter.filedialog.askopenfilename(title="Analyte File"))
 
     def setBatchFolder():
         """Ask for the batch folder.
         """
-        batchFolder.set(tkFileDialog.askdirectory(title="Batch Folder"))
+        batchFolder.set(tkinter.filedialog.askdirectory(title="Batch Folder"))
 
     def run():
         """Start the batch process.
@@ -468,7 +468,7 @@ def chromCalibration(fig,canvas):
     fig -- matplotlib figure object
     canvas -- tkinter canvas object
     """
-    refFile = tkFileDialog.askopenfilename(title="Reference File")
+    refFile = tkinter.filedialog.askopenfilename(title="Reference File")
     try:
         refPeaks = []
         with open(refFile,'r') as fr:
@@ -479,11 +479,11 @@ def chromCalibration(fig,canvas):
                 except ValueError:
                     pass
     except IOError:
-        tkMessageBox.showinfo("File Error","The selected reference file could not be opened.")
+        tkinter.messagebox.showinfo("File Error","The selected reference file could not be opened.")
 
     # Get observed times
     data = readData()
-    time, intensity = zip(*data[0][1])
+    time, intensity = list(zip(*data[0][1]))
     timePairs = []
     for i in refPeaks:
         low = bisect.bisect_left(time, i[1]-i[2])
@@ -501,7 +501,7 @@ def chromCalibration(fig,canvas):
     #z = np.polyfit(observedTime,expectedTime,2)
     #f = np.poly1d(z)
     f = ultraPerformanceCalibration(observedTime,expectedTime, time[0], time[-1])
-    calibratedData = zip(f(time),intensity)
+    calibratedData = list(zip(f(time),intensity))
 
     # Plot & Write Data to Disk  
     multiData = [(os.path.split(data[0][0])[-1], data[0][1]),(os.path.split(data[0][0])[-1]+" (Cal)",calibratedData)]
@@ -524,7 +524,7 @@ def fileCleanup():
         try:
             os.remove(f)
         except OSError:
-            tkMessageBox.showinfo("File Error", "A temporary file is open in another program. Please exit HappyTools "+
+            tkinter.messagebox.showinfo("File Error", "A temporary file is open in another program. Please exit HappyTools "+
                     "and close all temporary files before running HappyTools.")
 
 def fwhm(coeff):
@@ -602,9 +602,9 @@ def determineCalibrants(functions):
         calBuffer = None
         for j in functions:
             try:
-                X, Y = zip(*j['Data'])
+                X, Y = list(zip(*j['Data']))
             except:
-                print j
+                print(j)
             peakCenter = X[Y.index(max(Y))]
             peakIntensity = max(Y)
             if peakIntensity > maxIntensity and peakCenter > i[0] and peakCenter < i[1]:
@@ -652,7 +652,7 @@ def getPeakList(fileName):
                             fw.write(str(datetime.now().replace(microsecond=0))+"\tIgnoring line: "+str(line)+" from file: "+str(fileName)+"\n")
                     pass
     except IOError:
-        tkMessageBox.showinfo("File Error","The selected reference file could not be opened.")
+        tkinter.messagebox.showinfo("File Error","The selected reference file could not be opened.")
     return peaks
 
 def getSettings():
@@ -841,7 +841,7 @@ def openChrom(file):
                     try:
                         chromData.append((float(lineChunks[0]),float(lineChunks[-1])))
                     except UnicodeEncodeError:
-                        print "Omitting line: "+str(line)
+                        print("Omitting line: "+str(line))
         elif 'arw' in file:
             for line in fr:
                 lines = line.split('\r')
@@ -856,7 +856,7 @@ def openChrom(file):
                 except IndexError:
                     pass
         else:
-            print "Incorrect inputfile format, please upload a raw data 'txt' or 'arw' file."
+            print("Incorrect inputfile format, please upload a raw data 'txt' or 'arw' file.")
     return chromData
 
 def openFile(fig,canvas):
@@ -871,7 +871,7 @@ def openFile(fig,canvas):
     fig -- matplotlib figure object
     canvas -- tkinter canvas object
     """
-    file_path = tkFileDialog.askopenfilename()
+    file_path = tkinter.filedialog.askopenfilename()
     if not file_path:
         pass
     else:
@@ -934,15 +934,15 @@ def outputPopup():
     text1.grid(row=1, column=0, sticky=W)
     text2 = Label(top, text="Output Modifiers", font="bold")
     text2.grid(row=1, column=1, sticky=W)
-    ai = Checkbutton(top, text=u"Analyte Intensity\u00B9", variable=absInt, onvalue=1, offvalue=0)
+    ai = Checkbutton(top, text="Analyte Intensity\u00B9", variable=absInt, onvalue=1, offvalue=0)
     ai.grid(row=2, column=0, sticky=W)
-    ri = Checkbutton(top, text=u"Relative Intensity\u00B9", variable=relInt, onvalue=1, offvalue=0)
+    ri = Checkbutton(top, text="Relative Intensity\u00B9", variable=relInt, onvalue=1, offvalue=0)
     ri.grid(row=3, column=0, sticky=W)
     pq = Checkbutton(top, text="Peak Quality Criteria", variable=peakQual, onvalue=1, offvalue=0)
     pq.grid(row=4, column=0, sticky=W)
     bn = Checkbutton(top, text="Background and Noise", variable=bckNoise, onvalue=1, offvalue=0)
     bn.grid(row=5, column=0, sticky=W)
-    bck = Checkbutton(top, text=u"\u00B9Background subtracted Intensities", variable=bckSub, onvalue=1, offvalue=0)
+    bck = Checkbutton(top, text="\u00B9Background subtracted Intensities", variable=bckSub, onvalue=1, offvalue=0)
     bck.grid(row=2, column=1, sticky=W)
     button = Button(top,text='Ok',command = lambda: close())
     button.grid(row = 6, column = 0, columnspan = 2)
@@ -953,7 +953,7 @@ def overlayQuantitationWindows(fig,canvas):
     """ TODO
     """
     # Prompt for peaklist
-    peakList = tkFileDialog.askopenfilename()
+    peakList = tkinter.filedialog.askopenfilename()
     peaks = []
     with open(peakList,'r') as fr:
         for line in fr:
@@ -965,7 +965,7 @@ def overlayQuantitationWindows(fig,canvas):
 
     # Read data currently on canvas
     data = {'Name':readData()[0][0],'Data':readData()[0][1]}
-    time, intensity = zip(*data['Data'])
+    time, intensity = list(zip(*data['Data']))
 
     # Plot the original data
     fig.clear()
@@ -1015,7 +1015,7 @@ def peakDetection(fig,canvas):
     data = readData()
 
     # Retrieve subset of data and determine the background
-    x_data,y_data = zip(*data[0][1])
+    x_data,y_data = list(zip(*data[0][1]))
     orig_x = x_data
     orig_y = y_data
     low = bisect.bisect_left(x_data,start)
@@ -1049,7 +1049,7 @@ def peakDetection(fig,canvas):
     counter = 0
     while max(y_data)-NOBAN['Background'] > cutoff:
         counter += 1
-        print "Fitting peak: "+str(counter)
+        print("Fitting peak: "+str(counter))
         f = InterpolatedUnivariateSpline(x_data, y_data)
         fPrime = f.derivative()
         newY = f(newX)
@@ -1119,12 +1119,12 @@ def peakDetection(fig,canvas):
 
         # Ignore breaks (f'(x) == 0) that did not match any data (reword this)
         if newGaussX.any():
-            functions.append({'Peak':newGaussX[np.argmax(newGaussY)],'Data':zip(newGaussX,newGaussY),'FWHM':FWHM})
+            functions.append({'Peak':newGaussX[np.argmax(newGaussY)],'Data':list(zip(newGaussX,newGaussY)),'FWHM':FWHM})
 
         # Subtract the fitted Gaussian from the raw or intermediate data and repeat
         # the peak detection step.
         GaussY = gaussFunction(x_data,*coeff)
-        new_y = map(operator.sub, y_data, GaussY)
+        new_y = list(map(operator.sub, y_data, GaussY))
         if max(new_y) == max(y_data):
             break
         y_data = new_y
@@ -1177,14 +1177,14 @@ def peakDetection(fig,canvas):
     axes.plot(orig_x,orig_y, 'b',alpha=0.5)
     for index,i in enumerate(functions):
         try:
-            xd,yd = zip(*i['Data'])
+            xd,yd = list(zip(*i['Data']))
             axes.plot(xd,yd,label=str(index+1)+": "+str("%.2f" % i['Peak']))
             axes.fill_between(xd, 0, yd,alpha=0.2)
         except ValueError:
             pass
     for index,i in enumerate(calibrants):
         try:
-            xd,yd = zip(*i['Data'])
+            xd,yd = list(zip(*i['Data']))
             axes.annotate('Cal: '+str(index), xy=(xd[yd.index(max(yd))], max(yd)), xytext=(xd[yd.index(max(yd))], max(yd)), 
             arrowprops=dict(facecolor='black', shrink=0.05))
         except ValueError:
@@ -1197,7 +1197,7 @@ def peakDetection(fig,canvas):
 
     # Warn (if needed)
     if overlapDetected == True:
-        tkMessageBox.showinfo("Peak Overlap","HappyTools detected overlap between several automatically "+
+        tkinter.messagebox.showinfo("Peak Overlap","HappyTools detected overlap between several automatically "+
         "detected peaks. HappyTools has attempted to automatically re-adjust the borders to capture the "+
         "largest possible portion of the analytes, based on their signal intensities. However, please feel "+
         "free to manually re-adjust the signals if desired in the peak list.")
@@ -1224,10 +1224,10 @@ def quantifyChrom(fig, canvas):
     """ TODO
     This is super prelimenary, should/will produce a lot more values
     """
-    peakList = tkFileDialog.askopenfilename()
+    peakList = tkinter.filedialog.askopenfilename()
     peaks = getPeakList(peakList)
     data = {'Name':readData()[0][0],'Data':readData()[0][1]}
-    time, intensity = zip(*data['Data'])
+    time, intensity = list(zip(*data['Data']))
     results = []
     for i in peaks:
         low = bisect.bisect_left(time,i[1]-i[2])
@@ -1268,7 +1268,7 @@ def quantifyChrom(fig, canvas):
         fw.write("Name\tTime\tPeak Area\tS/N\tGaussian Residual RMS\n")
         for i in results:
             fw.write(str(i['Peak'])+"\t"+str(i['Time'])+"\t"+str(i['Area'])+"\t"+str(i['S/N'])+"\t"+str(i['Residual'])+"\n")
-    tkMessageBox.showinfo("Status Message", "Quantitation finished on "+str(datetime.now()))
+    tkinter.messagebox.showinfo("Status Message", "Quantitation finished on "+str(datetime.now()))
 
 def readData():
     """ TODO
@@ -1294,7 +1294,7 @@ def saveCalibrants(fig, canvas):
         Add correct try/except handling
     """
     origin = os.path.join(str(os.getcwd()),"temp","calibrants.ref")
-    target = tkFileDialog.asksaveasfile(mode='w', defaultextension=".ref")
+    target = tkinter.filedialog.asksaveasfile(mode='w', defaultextension=".ref")
     shutil.copyfile(origin,target.name)
 
 def saveAnnotation(fig, canvas):
@@ -1302,14 +1302,14 @@ def saveAnnotation(fig, canvas):
         Add correct try/except handling
     """
     origin = os.path.join(str(os.getcwd()),"temp","annotation.ref")
-    target = tkFileDialog.asksaveasfile(mode='w', defaultextension=".ref")
+    target = tkinter.filedialog.asksaveasfile(mode='w', defaultextension=".ref")
     shutil.copyfile(origin,target.name)
 
 def saveChrom():
     """ TODO
     """
     data = readData()
-    saveFile = tkFileDialog.asksaveasfilename()
+    saveFile = tkinter.filedialog.asksaveasfilename()
     with open(saveFile,'w') as fw:
         for i in data[0][1]:
             fw.write(str(format(i[0],'0.'+str(decimalNumbers)+'f'))+"\t"+str(format(i[1],'0.'+str(decimalNumbers)+'f'))+"\n")
@@ -1531,9 +1531,9 @@ def smoothChrom(fig, canvas):
     """ TODO
     """
     data = readData()
-    time, intensity = zip(*data[0][1])
+    time, intensity = list(zip(*data[0][1]))
     new = savgol_filter(intensity,21,3)
-    newData = zip(time,new)
+    newData = list(zip(time,new))
 
     # Plot & Write Data to Disk  
     multiData = [(os.path.split(data[0][0])[-1], data[0][1]),(os.path.split(data[0][0])[-1]+" (Smoothed)",newData)]
@@ -1553,7 +1553,7 @@ def ultraPerformanceCalibration(measured, expected, minimum, maximum):
     INPUT2: List of expected data points
     OUTPUT: Function object
     """
-    RMS = sys.maxint
+    RMS = sys.maxsize
     func = None
 
     # Polynomials between 1 and len(expected)

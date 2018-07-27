@@ -17,11 +17,11 @@
 
 # General imports
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2TkAgg
-from Tkinter import *
+from tkinter import *
 import glob
 import matplotlib
 import os
-import tkMessageBox
+import tkinter.messagebox
 
 # Custom libraries
 sys.path.append('libs')
@@ -101,7 +101,7 @@ class App():
     def __init__(self, master):
         # ACCESS CHECK
         if not functions.checkAccess(directories):
-            tkMessageBox.showinfo("Access Error", "HappyTools does not have sufficient disk access rights. Please close "+
+            tkinter.messagebox.showinfo("Access Error", "HappyTools does not have sufficient disk access rights. Please close "+
                     "HappyTools and check if the current user has read/write access to all folders in the Happytools "+
                     "folder.")
         # SETTINGS
