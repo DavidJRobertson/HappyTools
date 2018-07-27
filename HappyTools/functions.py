@@ -31,7 +31,7 @@ sys.path.append('..')
 import batchFunctions
 import HappyTools
 
-##################### 
+#####################
 # General variables #
 #####################
 points = 100
@@ -54,8 +54,8 @@ minPeakSN = 27
 # decimalNumbers specifies the number of decimal numbers to be used
 # in the files created by HappyTools
 decimalNumbers = 6
-# min_improvement specifies the minimum improvement in RMS that a 
-# calibration function must yield, to accept the more complex 
+# min_improvement specifies the minimum improvement in RMS that a
+# calibration function must yield, to accept the more complex
 # calibration function as an acceptable function.
 min_improvement = 0.05
 # use_interpolation specifies if calibration is allowed to use
@@ -223,17 +223,17 @@ def baselineCorrection(fig,canvas):
     func = np.polyfit(time, intensity, baselineOrder)
     p = np.poly1d(func)
 
-    # Transform 
+    # Transform
     time = [a for a,b in data[0][1]]
     newChromIntensity = [b-p(a) for a,b in data[0][1]]
-        
+
     # Uplift
     low = bisect.bisect_left(time, start)
     high = bisect.bisect_right(time, end)
     offset = abs(min(min(newChromIntensity[low:high]),0))
     newData = list(zip(time,[x+offset for x in newChromIntensity]))
 
-    # Plot & Write Data to Disk  
+    # Plot & Write Data to Disk
     multiData = [(os.path.split(data[0][0])[-1], data[0][1]),(os.path.split(data[0][0])[-1]+" (BC)",newData)]
     plotMultiData(fig,canvas,multiData)
     writeData(newData,os.path.split(data[0][0])[-1]+" (BC)")
@@ -278,7 +278,7 @@ def batchPlot(fig,canvas):
     """Read and plot all chromatograms in a directory.
 
     This function asks the user to select a directory from which the
-    function will read all the files that are specified in the 
+    function will read all the files that are specified in the
     CALIBRATION_FILETYPES paramater of the batchFunctions file and plot
     them to the canvas.
 
@@ -312,7 +312,7 @@ def batchPlotNorm(fig,canvas):
     """Read and plot all chromatograms in a directory.
 
     This function asks the user to select a directory from which the
-    function will read all the files that are specified in the 
+    function will read all the files that are specified in the
     CALIBRATION_FILETYPES paramater of the batchFunctions file. The
     function will then find the lowest and maximum intensities between
     the start and end variable, normalize all chromatograms and plot
@@ -348,7 +348,7 @@ def batchPlotNorm(fig,canvas):
             func = np.polyfit(time, intensity, baselineOrder)
             p = np.poly1d(func)
 
-            # Transform 
+            # Transform
             time = [a for a,b in chromData]
             newChromIntensity = [b-p(a) for a,b in chromData]
 
@@ -433,7 +433,7 @@ def batchPopup():
     batchButton.grid(row=3, column=0, sticky=W)
     batchLabel = Label(top, textvariable=batchFolder, width=20)
     batchLabel.grid(row=3, column=1, sticky=W)
-    
+
     outputButton = Button(top, text="Output Options", command=lambda: outputPopup())
     outputButton.grid(row=4, column=0, columnspan=2, sticky=E+W)
 
@@ -453,7 +453,7 @@ def batchPopup():
 def chromCalibration(fig,canvas):
     """Ask for a reference file and calibrate the current chromatogram.
 
-    This function will first ask the user to select a reference file 
+    This function will first ask the user to select a reference file
     using a tkinter filedialog.  The function will then find the highest
     intensity timepoint for each calibrant window. The actual
     calibration is achieved by fitting a second degree polynomial
@@ -503,7 +503,7 @@ def chromCalibration(fig,canvas):
     f = ultraPerformanceCalibration(observedTime,expectedTime, time[0], time[-1])
     calibratedData = list(zip(f(time),intensity))
 
-    # Plot & Write Data to Disk  
+    # Plot & Write Data to Disk
     multiData = [(os.path.split(data[0][0])[-1], data[0][1]),(os.path.split(data[0][0])[-1]+" (Cal)",calibratedData)]
     plotMultiData(fig,canvas,multiData)
     writeData(calibratedData,os.path.split(data[0][0])[-1]+" (Cal)")
@@ -529,12 +529,12 @@ def fileCleanup():
 
 def fwhm(coeff):
     """Calculate the FWHM.
-    
+
     This function will calculate the FWHM based on the following formula
     FWHM = 2*sigma*sqrt(2*ln(2)). The function will return a dictionary
     with the fwhm ('fwhm'), the Gaussian peak center ('center') and the
     +/- width, from the peak center ('width').
-    
+
     Keyword arguments:
     coeff -- coefficients as calculated by SciPy curve_fit
     """
@@ -543,20 +543,6 @@ def fwhm(coeff):
     center = coeff[1]
     return {'fwhm':fwhm, 'width':width, 'center':center}
 
-def checkAccess(all_directories):
-    """Check disk access
-    
-    This function will check if HappyTools has read/write access to
-    all the folders belonging to HappyTools.
-    
-    Keyword arguments:
-    None
-    """
-    access = True
-    for directory in all_directories:
-        if not os.access(directory, os.W_OK):
-            access = False
-    return access
 
 def createToolTip(widget, text):
     """Create a tooltip.
@@ -568,7 +554,7 @@ def createToolTip(widget, text):
     Keyword arguments:
     widget -- tkinter object
     text -- string
-    """ 
+    """
     toolTip = ToolTip(widget)
     def enter(event):
         toolTip.showtip(text)
@@ -579,7 +565,7 @@ def createToolTip(widget, text):
 
 def determineCalibrants(functions):
     """ Automatically determine suitable calibrant peaks.
-    
+
     This function is part of the automated peak detection
     functionality, where it attempts to determine the most suitable
     n number of calibrations (n is the user defined setting of minimum
@@ -587,7 +573,7 @@ def determineCalibrants(functions):
     between the first and last detected peaks into n chunks, determines
     the highest peak in each chunk and classifies these local maxima
     as potential calibrants.
-    
+
     Keyword Arguments:
     functions -- A list of dicts, containing Peak, Data and FWHM
     """
@@ -611,7 +597,7 @@ def determineCalibrants(functions):
                 maxIntensity = peakIntensity
                 calBuffer = j
         if calBuffer:
-            calibrants.append(calBuffer)  
+            calibrants.append(calBuffer)
     return calibrants
 
 def gaussFunction(x, *p):
@@ -629,13 +615,13 @@ def gaussFunction(x, *p):
 
 def getPeakList(fileName):
     """Read and parse the peak file and return a list of peaks.
-    
-    This function opens the file that is specified in 'fileName', and 
-    reads it on a line per line basis. The function will split each 
+
+    This function opens the file that is specified in 'fileName', and
+    reads it on a line per line basis. The function will split each
     line on '\t' prior to trying to append the parts to the 'peaks'
     list. The function will write a message to the logFile if logging
     is enabled if the previous mentioned try goes to the except clause.
-    
+
     Keyword argments:
     fileName -- string
     """
@@ -714,10 +700,10 @@ def getSettings():
 
 def infoPopup():
     """ Generate the about window.
-    
+
     This function will generate a new window that lists some information
     about HappyTools, such as the license and author.
-    
+
     Keyword Arguments:
     none
     """
@@ -862,7 +848,7 @@ def openChrom(file):
 def openFile(fig,canvas):
     """Open a file and show it on the canvas.
 
-    This function first asks the user to select a file via a file 
+    This function first asks the user to select a file via a file
     dialog. The function will then call two other functions to write a
     temporary file to the disk (writeData) and to plot the selected file
     on the canvas (plotData).
@@ -887,8 +873,8 @@ def openFile(fig,canvas):
 def outputPopup():
     """Create a pop-up enabling output selection.
 
-    This function creates a pop up box that allows the user to specify 
-    what output should be shown in the final summary. The default value 
+    This function creates a pop up box that allows the user to specify
+    what output should be shown in the final summary. The default value
     for all variables is off (0) and by ticking a box it is set to on
     (1).
 
@@ -994,18 +980,18 @@ def peakDetection(fig,canvas):
 
     This function performs peak detection by fitting a Gaussian function
     through the highest data points in a chromatogram. The fitted
-    function is then subtracted from the original data to yield a 
+    function is then subtracted from the original data to yield a
     chromatogram without the removed analyte, after which this process
     is repeated until the highest datapoint falls below the specified
     cut-off (determined by comparing the intensity of the most intense
     analyte in the original data with the intensity of the most intense
     analyte in the current (residual) data).
-    
+
     The peak detection is based on the assumption that the first
-    derivative of the data is 0 at a local maxima or minima. 
-    
+    derivative of the data is 0 at a local maxima or minima.
+
     <<TODO>>
-    the current implementation is overly complex and can be optimized 
+    the current implementation is overly complex and can be optimized
     and the code has to be cleaned up.
 
     Keyword arguments:
@@ -1149,7 +1135,7 @@ def peakDetection(fig,canvas):
             pass
 
     # Determine calibrants
-    calibrants = determineCalibrants(functions) 
+    calibrants = determineCalibrants(functions)
 
     # Writing to temp folder
     with open('temp/annotation.ref','w') as fw:
@@ -1185,7 +1171,7 @@ def peakDetection(fig,canvas):
     for index,i in enumerate(calibrants):
         try:
             xd,yd = list(zip(*i['Data']))
-            axes.annotate('Cal: '+str(index), xy=(xd[yd.index(max(yd))], max(yd)), xytext=(xd[yd.index(max(yd))], max(yd)), 
+            axes.annotate('Cal: '+str(index), xy=(xd[yd.index(max(yd))], max(yd)), xytext=(xd[yd.index(max(yd))], max(yd)),
             arrowprops=dict(facecolor='black', shrink=0.05))
         except ValueError:
             pass
@@ -1354,7 +1340,7 @@ def settingsPopup():
         peakDetectionEdge = str(peakDetectionEdgeVar.get())
         peakDetectionEdgeValue = float(peakDetectionEdgeValueWindow.get())
         top.destroy()
-    
+
     def save():
         """ TODO
         """
@@ -1381,19 +1367,19 @@ def settingsPopup():
     # General Settings
     generalLabel = Label(top, text="General Settings", font=("Helvetica", 16))
     generalLabel.grid(row=0, columnspan=2, sticky=W)
-    
+
     startLabel = Label(top, text="Start Time", font=("Helvetica", 12))
     startLabel.grid(row=1, column=0, sticky=W)
     startWindow = Entry(top)
     startWindow.insert(0, start)
     startWindow.grid(row=1, column=1, sticky=W)
-    
+
     endLabel = Label(top, text="End Time", font=("Helvetica", 12))
     endLabel.grid(row=2, column=0, sticky=W)
     endWindow = Entry(top)
     endWindow.insert(0, end)
     endWindow.grid(row=2, column=1, sticky=W)
-    
+
     # Peak Detection Settings
     peakDetectionLabel = Label(top, text="Peak Detection Settings", font=("Helvetica", 16))
     peakDetectionLabel.grid(row=3, columnspan=2, sticky=W)
@@ -1430,11 +1416,11 @@ def settingsPopup():
     minPeakSNWindow = Entry(top)
     minPeakSNWindow.insert(0, minPeakSN)
     minPeakSNWindow.grid(row=9, column=1, sticky=W)
-    
+
     # Quantitation Settings
     quantitationLabel = Label(top, text="Quantitation Settings", font=("Helvetica", 16))
     quantitationLabel.grid(row=10, columnspan=2, sticky=W)
-    
+
     pointsLabel = Label(top, text="Datapoints", font=("Helvetica", 12))
     pointsLabel.grid(row=11, column=0, sticky=W)
     pointsWindow = Entry(top)
@@ -1446,7 +1432,7 @@ def settingsPopup():
     baselineOrderWindow = Entry(top)
     baselineOrderWindow.insert(0, baselineOrder)
     baselineOrderWindow.grid(row=12, column=1, sticky=W)
-    
+
     backgroundWindowLabel = Label(top, text="Background Window", font=("Helvetica", 12))
     backgroundWindowLabel.grid(row=13, column=0, sticky=W)
     backgroundWindowWindow = Entry(top)
@@ -1525,7 +1511,7 @@ def settingsPopup():
             "determining the border of the integration window. A value of 1.0 means that HappyTools will set the "+
             "integration window so that 68.3% of the Gaussian peak will be quantified (2 Sigma = 95.5% and 3 sigma "+
             "= 99.7%). Please note that this value should depend on how complex the chromatogram is, for instance "+
-            "a low sigma will yield better results in a complex chromatogram.") 
+            "a low sigma will yield better results in a complex chromatogram.")
 
 def smoothChrom(fig, canvas):
     """ TODO
@@ -1535,20 +1521,20 @@ def smoothChrom(fig, canvas):
     new = savgol_filter(intensity,21,3)
     newData = list(zip(time,new))
 
-    # Plot & Write Data to Disk  
+    # Plot & Write Data to Disk
     multiData = [(os.path.split(data[0][0])[-1], data[0][1]),(os.path.split(data[0][0])[-1]+" (Smoothed)",newData)]
     plotMultiData(fig,canvas,multiData)
     writeData(newData,os.path.split(data[0][0])[-1]+" (Smoothed)")
 
 def ultraPerformanceCalibration(measured, expected, minimum, maximum):
-    """ This function tries various calibration methods, starting with 
+    """ This function tries various calibration methods, starting with
     polynomials, followed by a power law function and lastly tries two
     interpolation methods (Pchip and Akima1D). The latter methods should
     always return an RMS of 0, which is why the function will only use
     those if they give a significant improvement in RMS (defined in
     min_improvement) and if the user has selected to use interpolation
     methods as well (defined in use_interpolation).
-    
+
     INPUT1: List of measured data points
     INPUT2: List of expected data points
     OUTPUT: Function object
@@ -1560,7 +1546,7 @@ def ultraPerformanceCalibration(measured, expected, minimum, maximum):
     for i in range(1,len(expected)):
         z = np.polyfit(measured, expected, i)
         f = np.poly1d(z)
-        
+
         # Check if the fitted polynomial is monotone
         X_range = np.linspace(minimum, maximum, 10000)
         dx = np.diff(f(X_range))
@@ -1630,7 +1616,7 @@ def updateProgressBar(bar, variable, index, length):
 def writeData(data,file_path):
     """ TODO
     """
-    with open('temp/tracebuffer.txt','w') as fw:     
+    with open('temp/tracebuffer.txt','w') as fw:
         fw.write(">>"+str(file_path)+"\n")
         for i in data:
             fw.write(str(format(i[0],'0.'+str(decimalNumbers)+'f'))+"\t"+str(format(i[1],'0.'+str(decimalNumbers)+'f'))+"\n")
