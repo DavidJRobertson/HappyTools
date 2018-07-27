@@ -164,10 +164,6 @@ class App():
         advancedmenu.add_command(label="Save Annotation", command=lambda: functions.saveAnnotation(self.fig, self.canvas))
 
 
-
-
-
-
         if glob.glob(os.path.join(".","plugins","*.py")):
             import importlib
             pluginsmenu = Menu(menu,tearoff=0)
