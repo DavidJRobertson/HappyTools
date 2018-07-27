@@ -2,6 +2,9 @@
 temp/*
 !temp/.gitkeep
 
+# matplotlib
+matplotlibrc
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
