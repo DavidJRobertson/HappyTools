@@ -1,7 +1,7 @@
 from tkinter import StringVar, Tk, Toplevel, Label, W, Entry, OptionMenu, Button, E
-from util.ToolTip import createToolTip
-import HappyTools
 
+import HappyTools
+from gui.ToolTip import ToolTip
 
 slicepoints = 5
 points = 100
@@ -18,6 +18,7 @@ min_improvement = 0.05
 use_interpolation = False
 noise = "RMS"
 backgroundNoiseMethod = "MT"
+output = "summary.results"
 
 
 def get_settings():
@@ -35,39 +36,39 @@ def get_settings():
         for line in fr:
             chunks = line.strip('\n').split('\t')
             if chunks[0] == "points:":
-                settings.points = int(chunks[1])
+                points = int(chunks[1])
             elif chunks[0] == "start:":
-                settings.start = float(chunks[1])
+                start = float(chunks[1])
             elif chunks[0] == "end:":
-                settings.end = float(chunks[1])
+                end = float(chunks[1])
             elif chunks[0] == "baselineOrder:":
-                settings.baselineOrder = int(chunks[1])
+                baselineOrder = int(chunks[1])
             elif chunks[0] == "backgroundWindow:":
-                settings.backgroundWindow = float(chunks[1])
+                backgroundWindow = float(chunks[1])
             elif chunks[0] == "noise:":
-                settings.noise = str(chunks[1])
+                noise = str(chunks[1])
             # elif chunks[0] == "nobanStart:":
             # global nobanStart
             # nobanStart = float(chunks[1])
             elif chunks[0] == "slicepoints:":
-                settings.slicepoints = int(chunks[1])
+                slicepoints = int(chunks[1])
             elif chunks[0] == "createFigure:":
                 global createFigure
                 createFigure = str(chunks[1])
             elif chunks[0] == "minPeaks:":
-                settings.minPeaks = int(chunks[1])
+                minPeaks = int(chunks[1])
             elif chunks[0] == "minPeakSN:":
                 global minPeakSN
                 minPeakSN = int(chunks[1])
             elif chunks[0] == "peakDetectionMin:":
-                settings.peakDetectionMin = float(chunks[1])
+                peakDetectionMin = float(chunks[1])
             elif chunks[0] == "peakDetectionEdge:":
-                settings.peakDetectionEdge = str(chunks[1])
+                peakDetectionEdge = str(chunks[1])
             elif chunks[0] == "peakDetectionEdgeValue:":
-                settings.peakDetectionEdgeValue = float(chunks[1])
+                peakDetectionEdgeValue = float(chunks[1])
 
 
-def settingsPopup():
+def settings_popup():
     """ TODO: Redesign settings window (it's fugly)
     """
 
@@ -111,7 +112,7 @@ def settingsPopup():
     def save():
         """ TODO
         """
-        with open(HappyTools.settings, 'w') as fw:
+        with open(gui.settings, 'w') as fw:
             fw.write("points:\t" + str(int(pointsWindow.get())) + "\n")
             fw.write("start:\t" + str(float(startWindow.get())) + "\n")
             fw.write("end:\t" + str(float(endWindow.get())) + "\n")
@@ -231,57 +232,56 @@ def settingsPopup():
     closeButton.grid(row=17, column=1, sticky=E)
 
     # Tooltips
-    createToolTip(pointsLabel, "The number of data points that is used to determine the baseline. Specifically, " +
-                  "this setting specifies how large each segment of the whole chromatogram will be to identify the lowest " +
-                  "data point per window, i.e. a setting of 100 means that the chromatogram is split into segments of 100 " +
-                  "data points per segment.")
-    createToolTip(startLabel, "This setting tells the program from which time point it is supposed to begin " +
-                  "processing, this setting should be set in such a way that it is before the analytes of interest but " +
-                  "after any potential big increases or decrease in intensity.")
-    createToolTip(endLabel,
-                  "This setting tells the program until which time point it is supposed to begin processing, " +
-                  "this setting should be set in such a way that it is after the analytes of interest but before any " +
-                  "potential big increases or decrease in intensity.")
-    createToolTip(baselineOrderLabel,
-                  "This setting tells the program what sort of function should be used to correct " +
-                  "the baseline. A value of 1 refers to a linear function, while a value of 2 refers to a quadratic " +
-                  "function. We advise to use a linear function as the need for any higher order function indicates an " +
-                  "unexpected event in the chromatography.")
-    createToolTip(backgroundWindowLabel,
-                  "This setting tells the program the size of the region that will be examined " +
-                  "to determine the background. A value of 1 means that the program will look from 20.0 to 21.0 minutes " +
-                  "and 21.4 to 22.4 for an analyte that elutes from 21.0 to 21.4 minutes.")
-    # createToolTip(nobanLabel,"This setting specifies the initial estimate for the NOBAN algorithm, specifically a "+
+    ToolTip(pointsLabel, "The number of data points that is used to determine the baseline. Specifically, " +
+            "this setting specifies how large each segment of the whole chromatogram will be to identify the lowest " +
+            "data point per window, i.e. a setting of 100 means that the chromatogram is split into segments of 100 " +
+            "data points per segment.")
+    ToolTip(startLabel, "This setting tells the program from which time point it is supposed to begin " +
+            "processing, this setting should be set in such a way that it is before the analytes of interest but " +
+            "after any potential big increases or decrease in intensity.")
+    ToolTip(endLabel,
+            "This setting tells the program until which time point it is supposed to begin processing, " +
+            "this setting should be set in such a way that it is after the analytes of interest but before any " +
+            "potential big increases or decrease in intensity.")
+    ToolTip(baselineOrderLabel,
+            "This setting tells the program what sort of function should be used to correct " +
+            "the baseline. A value of 1 refers to a linear function, while a value of 2 refers to a quadratic " +
+            "function. We advise to use a linear function as the need for any higher order function indicates an " +
+            "unexpected event in the chromatography.")
+    ToolTip(backgroundWindowLabel,
+            "This setting tells the program the size of the region that will be examined " +
+            "to determine the background. A value of 1 means that the program will look from 20.0 to 21.0 minutes " +
+            "and 21.4 to 22.4 for an analyte that elutes from 21.0 to 21.4 minutes.")
+    # ToolTip(nobanLabel,"This setting specifies the initial estimate for the NOBAN algorithm, specifically a "+
     # "value of 0.25 means that the lowest 25% of all data points will be used as an initial estimate for the "+
     # "background. This value should be changed depending on how many signals there are in the chromatogram, "+
     # "e.g. in a crowded chromatogram this value should be low.")
-    createToolTip(slicepointsLabel, "The number of conscutive data points that will be used to determine the " +
-                  "background and noise using the MT method. The MT method will scan all datapoints that fall within the " +
-                  "background window (specified above) to find the here specified number of consecutive data points that " +
-                  "yield the lowest average intensity, the average of these data points is then used as background while " +
-                  "the standard deviation of these data points is used as the noise.")
-    createToolTip(figureLabel,
-                  "This setting specifies if HappyTools should create a figure for each integrated peak, " +
-                  "showing the raw datapoints, background, noise, S/N and GPQ values. This is a very performance intensive " +
-                  "option and it is recommended to only use this on a subset of your samples (e.g. less than 25 samples).")
-    createToolTip(minPeakLabel, "This setting specifies the minimum number of calibrant peaks that have to pass the " +
-                  "specified S/N value that must be present in a chromatogram. A chromatogram for which there are not " +
-                  "enough calibrant peaks passing the specified criteria will not be calibrated and excluded from further " +
-                  "quantitation.")
-    createToolTip(minPeakSNLabel, "This setting specifies the minimum S/N value a calibrant peak must surpass to be " +
-                  "included in the calibration. The actual S/N value that is determined by HappyTools depends heavily on " +
-                  "which method to determine signal and noise is used, the default method being rather conservative.")
-    createToolTip(peakDetectionLabel, "This setting specifies the minimum intensity, relative to the main peak in " +
-                  "a chromatogram, that the peak detection algorithm will try to annotate. For example, a value of 0.01 " +
-                  "means that the program will attempt to annotate peaks until the next highest peak is below 1% of the " +
-                  "intensity of the main peak in the chromatogram.")
-    createToolTip(peakDetectionEdgeLabel,
-                  "This setting specifies if HappyTools will determine the integration window " +
-                  "using either the full width at half maximum (FWHM) or a specified sigma value. The Sigma value has to be " +
-                  "specified in the field below if Sigma is the selected method.")
-    createToolTip(peakDetectionEdgeValueLabel, "This setting specifies the Sigma value that will be used for " +
-                  "determining the border of the integration window. A value of 1.0 means that HappyTools will set the " +
-                  "integration window so that 68.3% of the Gaussian peak will be quantified (2 Sigma = 95.5% and 3 sigma " +
-                  "= 99.7%). Please note that this value should depend on how complex the chromatogram is, for instance " +
-                  "a low sigma will yield better results in a complex chromatogram.")
-
+    ToolTip(slicepointsLabel, "The number of conscutive data points that will be used to determine the " +
+            "background and noise using the MT method. The MT method will scan all datapoints that fall within the " +
+            "background window (specified above) to find the here specified number of consecutive data points that " +
+            "yield the lowest average intensity, the average of these data points is then used as background while " +
+            "the standard deviation of these data points is used as the noise.")
+    ToolTip(figureLabel,
+            "This setting specifies if HappyTools should create a figure for each integrated peak, " +
+            "showing the raw datapoints, background, noise, S/N and GPQ values. This is a very performance intensive " +
+            "option and it is recommended to only use this on a subset of your samples (e.g. less than 25 samples).")
+    ToolTip(minPeakLabel, "This setting specifies the minimum number of calibrant peaks that have to pass the " +
+            "specified S/N value that must be present in a chromatogram. A chromatogram for which there are not " +
+            "enough calibrant peaks passing the specified criteria will not be calibrated and excluded from further " +
+            "quantitation.")
+    ToolTip(minPeakSNLabel, "This setting specifies the minimum S/N value a calibrant peak must surpass to be " +
+            "included in the calibration. The actual S/N value that is determined by HappyTools depends heavily on " +
+            "which method to determine signal and noise is used, the default method being rather conservative.")
+    ToolTip(peakDetectionLabel, "This setting specifies the minimum intensity, relative to the main peak in " +
+            "a chromatogram, that the peak detection algorithm will try to annotate. For example, a value of 0.01 " +
+            "means that the program will attempt to annotate peaks until the next highest peak is below 1% of the " +
+            "intensity of the main peak in the chromatogram.")
+    ToolTip(peakDetectionEdgeLabel,
+            "This setting specifies if HappyTools will determine the integration window " +
+            "using either the full width at half maximum (FWHM) or a specified sigma value. The Sigma value has to be " +
+            "specified in the field below if Sigma is the selected method.")
+    ToolTip(peakDetectionEdgeValueLabel, "This setting specifies the Sigma value that will be used for " +
+            "determining the border of the integration window. A value of 1.0 means that HappyTools will set the " +
+            "integration window so that 68.3% of the Gaussian peak will be quantified (2 Sigma = 95.5% and 3 sigma " +
+            "= 99.7%). Please note that this value should depend on how complex the chromatogram is, for instance " +
+            "a low sigma will yield better results in a complex chromatogram.")

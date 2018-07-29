@@ -85,7 +85,10 @@ def chromCalibration(fig, canvas):
     writeData(calibratedData, os.path.split(data[0][0])[-1] + " (Cal)")
 
 
-def openFile(fig, canvas):
+
+
+
+def open_file(fig, canvas):
     """Open a file and show it on the canvas.
 
     This function first asks the user to select a file via a file
@@ -112,8 +115,6 @@ def openFile(fig, canvas):
 
 
 def overlayQuantitationWindows(fig, canvas):
-    """ TODO
-    """
     # Prompt for peaklist
     peakList = tkinter.filedialog.askopenfilename()
     peaks = []

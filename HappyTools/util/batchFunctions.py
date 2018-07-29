@@ -1,34 +1,27 @@
 #! /usr/bin/env python
 
-# General imports
+import bisect
+import glob
+import operator
+import os
+import tkinter.messagebox
+import tkinter.ttk
 from datetime import datetime
+from tkinter import StringVar, Toplevel, Label
+
+import matplotlib.pyplot as plt
+import numpy as np
 from matplotlib.backends.backend_pdf import PdfPages
 from scipy.interpolate import InterpolatedUnivariateSpline
 from scipy.interpolate import PchipInterpolator, Akima1DInterpolator
 from scipy.optimize import curve_fit
 from scipy.signal import argrelextrema
-from tkinter import StringVar, Toplevel, Label
-import bisect
-import glob
-import numpy as np
-import operator
-import os
-import sys
-import tkinter.ttk
-import tkinter.messagebox
 
-# Test imports
-import matplotlib.pyplot as plt
-# Custom libraries
 import Chromatogram
-import crap
-import gui
-import settings
-from util import PowerLawCall
-
-sys.path.append('..')
-import functions
 import HappyTools
+import gui
+from gui import settings
+from util import PowerLawCall, functions
 
 # Defines
 EXCLUSION_FILES = ["LICENSE.txt", "CHANGELOG.txt"]
@@ -39,12 +32,11 @@ createFigure = "True"
 minPeakSN = 27
 
 
-
 def batchCalibrationControl(data, calFile):
     """ TODO 
     """
     # Get calibration values
-    refPeaks = Chromatogram.getPeakList(calFile.get())
+    refPeaks = Chromatogram.get_peak_list(calFile.get())
 
     # Get observed times
     timePairs = determineTimepairs(refPeaks, data)
@@ -176,7 +168,7 @@ def batchQuantitationControl(data, analFile, batchFolder):
     data -- list of (time,intensity) tuples
     analFile -- unicode string
     """
-    peaks = Chromatogram.getPeakList(analFile.get())
+    peaks = Chromatogram.get_peak_list(analFile.get())
     time, intensity = list(zip(*data['Data']))
     results = []
 
@@ -271,14 +263,14 @@ def batchQuantitationControl(data, analFile, batchFolder):
         newGaussX = np.linspace(x_data[0], x_data[-1], 2500 * (x_data[-1] - x_data[0]))
         p0 = [np.max(yData), xData[np.argmax(yData)], guess_sigma]
         try:
-            coeff, var_matrix = curve_fit(Chromatogram.gaussFunction, xData, yData, p0)
-            newGaussY = Chromatogram.gaussFunction(newGaussX, *coeff)
+            coeff, var_matrix = curve_fit(Chromatogram.gauss_function, xData, yData, p0)
+            newGaussY = Chromatogram.gauss_function(newGaussX, *coeff)
             newGaussY = [x + NOBAN['Background'] for x in newGaussY]
             for index, j in enumerate(intensity[low:high]):
-                gaussArea += max(Chromatogram.gaussFunction(time[low + index], *coeff), 0) * (
-                            time[low + index] - time[low + index - 1])
+                gaussArea += max(Chromatogram.gauss_function(time[low + index], *coeff), 0) * (
+                        time[low + index] - time[low + index - 1])
             fwhm = Chromatogram.fwhm(coeff)
-            height = Chromatogram.gaussFunction(fwhm['center'] + fwhm['width'], *coeff) + NOBAN['Background']
+            height = Chromatogram.gauss_function(fwhm['center'] + fwhm['width'], *coeff) + NOBAN['Background']
         except TypeError:
             if HappyTools.logging == True and HappyTools.logLevel > 1:
                 with open(HappyTools.logFile, 'a') as fw:
@@ -687,7 +679,6 @@ def writeData(batchFolder, data):
                     settings.decimalNumbers) + 'f')) + "\n")
 
 
-
 def batchPlot(fig, canvas):
     """Read and plot all chromatograms in a directory.
 
@@ -721,6 +712,7 @@ def batchPlot(fig, canvas):
                 axes.plot(x_array, y_array, label=str(os.path.split(i[0])[-1]))
             axes.legend()
         canvas.draw()
+
 
 def batchPlotNorm(fig, canvas):
     """Read and plot all chromatograms in a directory.
@@ -787,4 +779,3 @@ def batchPlotNorm(fig, canvas):
                 axes.plot(x_array, y_array, label=str(os.path.split(i[0])[-1]))
             axes.legend()
         canvas.draw()
-

@@ -1,22 +1,18 @@
 import bisect
 import math
-import operator
 import os
 import shutil
 import sys
 import tkinter.filedialog
 import tkinter.messagebox
 from datetime import datetime
-
 import numpy as np
-from scipy.interpolate import InterpolatedUnivariateSpline, PchipInterpolator, Akima1DInterpolator
-from scipy.optimize import curve_fit
-from scipy.signal import argrelextrema
+import scipy.interpolate
+import scipy.optimize
+
 from Trace import Trace
-from crap import background_noise, plotMultiData
-from functions import nobanStart
-from settings import *
-from util.PowerLawCall import PowerLawCall
+from gui.settings import *
+import util
 
 
 class Chromatogram(object):
@@ -54,31 +50,6 @@ class Chromatogram(object):
 
 
 
-
-def powerLaw(x, a, b, c):
-    penalty = 0
-    if b > 2.:
-        penalty = abs(b - 1.) * 10000
-    if b < 0.:
-        penalty = abs(2. - b) * 10000
-    return a * x ** b + c + penalty
-
-
-def fwhm(coeff):
-    """Calculate the FWHM.
-
-    This function will calculate the FWHM based on the following formula
-    FWHM = 2*sigma*sqrt(2*ln(2)). The function will return a dictionary
-    with the fwhm ('fwhm'), the Gaussian peak center ('center') and the
-    +/- width, from the peak center ('width').
-
-    Keyword arguments:
-    coeff -- coefficients as calculated by SciPy curve_fit
-    """
-    fwhm = abs(2 * coeff[2] * math.sqrt(2 * math.log(2)))
-    width = 0.5 * fwhm
-    center = coeff[1]
-    return {'fwhm': fwhm, 'width': width, 'center': center}
 
 
 def determineCalibrants(functions):
@@ -120,21 +91,10 @@ def determineCalibrants(functions):
     return calibrants
 
 
-def gaussFunction(x, *p):
-    """Define and return a Gaussian function.
-
-    This function returns the value of a Gaussian function, using the
-    A, mu and sigma value that is provided as *p.
-
-    Keyword arguments:
-    x -- number
-    p -- A, mu and sigma numbers
-    """
-    A, mu, sigma = p
-    return A * np.exp(-(x - mu) ** 2 / (2. * sigma ** 2))
 
 
-def getPeakList(fileName):
+
+def get_peak_list(fileName):
     """Read and parse the peak file and return a list of peaks.
 
     This function opens the file that is specified in 'fileName', and
@@ -239,231 +199,12 @@ def noban(data):
     return {'Background': curr_average, 'Noise': curr_noise}
 
 
-def peakDetection(fig, canvas):
-    """Detect all peaks in the currently active chromatogram.
-
-    This function performs peak detection by fitting a Gaussian function
-    through the highest data points in a chromatogram. The fitted
-    function is then subtracted from the original data to yield a
-    chromatogram without the removed analyte, after which this process
-    is repeated until the highest datapoint falls below the specified
-    cut-off (determined by comparing the intensity of the most intense
-    analyte in the original data with the intensity of the most intense
-    analyte in the current (residual) data).
-
-    The peak detection is based on the assumption that the first
-    derivative of the data is 0 at a local maxima or minima.
-
-    <<TODO>>
-    the current implementation is overly complex and can be optimized
-    and the code has to be cleaned up.
-
-    Keyword arguments:
-    fig -- matplotlib figure object
-    canvas -- tkinter canvas object
-    """
-    data = readData()
-
-    # Retrieve subset of data and determine the background
-    x_data, y_data = list(zip(*data[0][1]))
-    orig_x = x_data
-    orig_y = y_data
-    low = bisect.bisect_left(x_data, start)
-    high = bisect.bisect_right(x_data, end)
-    x_data = x_data[low:high]
-    y_data = y_data[low:high]
-    if backgroundNoiseMethod == "NOBAN":
-        NOBAN = noban(y_data)
-    elif backgroundNoiseMethod == "MT":
-        NOBAN = background_noise(y_data)
-
-    # Determine the local maxima and minima, using first order derivative
-    newX = np.linspace(x_data[0], x_data[-1], 25000 * (x_data[-1] - x_data[0]))
-    f = InterpolatedUnivariateSpline(x_data, y_data)
-    fPrime = f.derivative()
-    newY = f(newX)
-    newPrimeY = fPrime(newX)
-    maxm = argrelextrema(newPrimeY, np.greater)
-    minm = argrelextrema(newPrimeY, np.less)
-    breaks = maxm[0].tolist() + minm[0].tolist()
-    breaks = sorted(breaks)
-
-    # Determine the maximum full peak within the specified window, for the cut-off
-    maxIntensity = 0
-    for i in range(0, len(breaks) - 2):
-        maxIntensity = max(max(newY[breaks[i]:breaks[i + 1]]), maxIntensity)
-    cutoff = peakDetectionMin * (maxIntensity - max(NOBAN['Background'], 0))
-
-    # Detect peaks
-    functions = []
-    counter = 0
-    while max(y_data) - NOBAN['Background'] > cutoff:
-        counter += 1
-        print("Fitting peak: " + str(counter))
-        f = InterpolatedUnivariateSpline(x_data, y_data)
-        fPrime = f.derivative()
-        newY = f(newX)
-        newPrimeY = fPrime(newX)
-        maxm = argrelextrema(newPrimeY, np.greater)
-        minm = argrelextrema(newPrimeY, np.less)
-        breaks = maxm[0].tolist() + minm[0].tolist()
-        breaks = sorted(breaks)
-        maxPoint = 0
-
-        # Subset the data
-        # Region from newY[0] to breaks[0]
-        try:
-            if max(newY[0:breaks[0]]) > maxPoint:
-                maxPoint = max(newY[0:breaks[0]])
-                xData = newX[0:breaks[0]]
-                yData = [x - NOBAN['Background'] for x in newY[0:breaks[0]]]
-        except IndexError:
-            pass
-        # Regions between breaks[x] and breaks[x+1]
-        try:
-            for index, j in enumerate(breaks):
-                if max(newY[breaks[index]:breaks[index + 1]]) > maxPoint:
-                    maxPoint = max(newY[breaks[index]:breaks[index + 1]])
-                    xData = newX[breaks[index]:breaks[index + 1]]
-                    yData = [x - max(NOBAN['Background'], 0) for x in newY[breaks[index]:breaks[index + 1]]]
-        except IndexError:
-            pass
-        # Region from break[-1] to newY[-1]
-        try:
-            if max(newY[breaks[-1]:-1]) > maxPoint:
-                maxPoint = max(newY[breaks[-1]:-1])
-                xData = newX[breaks[-1]:-1]
-                yData = [x - NOBAN['Background'] for x in newY[breaks[-1]:-1]]
-        except IndexError:
-            pass
-
-        # Gaussian fit on main points
-        peak = xData[yData > np.exp(-0.5) * max(yData)]
-        guess_sigma = 0.5 * (max(peak) - min(peak))
-        newGaussX = np.linspace(x_data[0], x_data[-1], 2500 * (x_data[-1] - x_data[0]))
-        p0 = [np.max(yData), xData[np.argmax(yData)], guess_sigma]
-        try:
-            coeff, var_matrix = curve_fit(gaussFunction, xData, yData, p0)
-            newGaussY = gaussFunction(newGaussX, *coeff)
-        except:
-            pass
-
-        # Limit the peak to either FWHM or a user specified Sigma value
-        FWHM = fwhm(coeff)
-        if peakDetectionEdge == "FWHM":
-            low = bisect.bisect_left(newGaussX, coeff[1] - FWHM['width'])
-            high = bisect.bisect_right(newGaussX, coeff[1] + FWHM['width'])
-            try:
-                newGaussX = newGaussX[low:high]
-                newGaussY = newGaussY[low:high]
-            except:
-                pass
-        elif peakDetectionEdge == "Sigma":
-            low = bisect.bisect_left(newGaussX, coeff[1] - peakDetectionEdgeValue * abs(coeff[2]))
-            high = bisect.bisect_right(newGaussX, coeff[1] + peakDetectionEdgeValue * abs(coeff[2]))
-            try:
-                newGaussX = newGaussX[low:high]
-                newGaussY = newGaussY[low:high]
-            except:
-                pass
-
-        # Ignore breaks (f'(x) == 0) that did not match any data (reword this)
-        if newGaussX.any():
-            functions.append(
-                {'Peak': newGaussX[np.argmax(newGaussY)], 'Data': list(zip(newGaussX, newGaussY)), 'FWHM': FWHM})
-
-        # Subtract the fitted Gaussian from the raw or intermediate data and repeat
-        # the peak detection step.
-        GaussY = gaussFunction(x_data, *coeff)
-        new_y = list(map(operator.sub, y_data, GaussY))
-        if max(new_y) == max(y_data):
-            break
-        y_data = new_y
-    functions = sorted(functions, key=lambda tup: tup['Peak'])
-
-    # iterate over all peaks and remove overlap
-    overlapDetected = False
-    for index, i in enumerate(functions):
-        try:
-            if i['Data'][-1][0] > functions[index + 1]['Data'][0][0]:
-                overlapDetected = True
-                overlap = abs(functions[index + 1]['Data'][0][0] - i['Data'][-1][0])
-                peak1 = max([x[1] for x in i['Data']])
-                peak2 = max([x[1] for x in functions[index + 1]['Data']])
-                peak1fraction = (peak1 / (peak1 + peak2)) * overlap
-                peak2fraction = (peak2 / (peak1 + peak2)) * overlap
-                low = bisect.bisect_right([x[0] for x in i['Data']], i['Data'][-1][0] - peak2fraction)
-                high = bisect.bisect_left([x[0] for x in functions[index + 1]['Data']],
-                                          functions[index + 1]['Data'][0][0] + peak1fraction)
-                i['Data'] = i['Data'][0:low]
-                functions[index + 1]['Data'] = functions[index + 1]['Data'][high:-1]
-        except IndexError:
-            pass
-
-    # Determine calibrants
-    calibrants = determineCalibrants(functions)
-
-    # Writing to temp folder
-    with open('temp/annotation.ref', 'w') as fw:
-        fw.write("Peak\tRT\tWindow\n")
-        for index, analyte in enumerate(functions):
-            try:
-                window = 0.5 * (float(analyte['Data'][-1][0]) - float(analyte['Data'][0][0]))
-                center = float(analyte['Data'][0][0]) + 0.5 * window
-                fw.write(
-                    str("%.2f" % analyte['Peak']) + "\t" + str("%.2f" % center) + "\t" + str("%.2f" % window) + "\n")
-            except:
-                pass
-    with open('temp/calibrants.ref', 'w') as fw:
-        fw.write("Peak\tRT\tWindow\n")
-        for index, analyte in enumerate(calibrants):
-            try:
-                window = 0.5 * (float(analyte['Data'][-1][0]) - float(analyte['Data'][0][0]))
-                center = float(analyte['Data'][0][0]) + 0.5 * window
-                fw.write(
-                    str("%.2f" % analyte['Peak']) + "\t" + str("%.2f" % center) + "\t" + str("%.2f" % window) + "\n")
-            except:
-                pass
-
-    # Plotting
-    fig.clear()
-    axes = fig.add_subplot(111)
-    axes.plot(orig_x, orig_y, 'b', alpha=0.5)
-    for index, i in enumerate(functions):
-        try:
-            xd, yd = list(zip(*i['Data']))
-            axes.plot(xd, yd, label=str(index + 1) + ": " + str("%.2f" % i['Peak']))
-            axes.fill_between(xd, 0, yd, alpha=0.2)
-        except ValueError:
-            pass
-    for index, i in enumerate(calibrants):
-        try:
-            xd, yd = list(zip(*i['Data']))
-            axes.annotate('Cal: ' + str(index), xy=(xd[yd.index(max(yd))], max(yd)),
-                          xytext=(xd[yd.index(max(yd))], max(yd)),
-                          arrowprops=dict(facecolor='black', shrink=0.05))
-        except ValueError:
-            pass
-    axes.set_xlabel("Time [m]")
-    axes.set_ylabel("Intensity [au]")
-    handles, labels = axes.get_legend_handles_labels()
-    fig.legend(handles, labels)
-    canvas.draw()
-
-    # Warn (if needed)
-    if overlapDetected:
-        tkinter.messagebox.showinfo("Peak Overlap", "HappyTools detected overlap between several automatically " +
-                                    "detected peaks. HappyTools has attempted to automatically re-adjust the borders to capture the " +
-                                    "largest possible portion of the analytes, based on their signal intensities. However, please feel " +
-                                    "free to manually re-adjust the signals if desired in the peak list.")
-
-
 def quantifyChrom(fig, canvas):
     """ TODO
-    This is super prelimenary, should/will produce a lot more values
+    This is super preliminary, should/will produce a lot more values
     """
     peakList = tkinter.filedialog.askopenfilename()
-    peaks = getPeakList(peakList)
+    peaks = get_peak_list(peakList)
     data = {'Name': readData()[0][0], 'Data': readData()[0][1]}
     time, intensity = list(zip(*data['Data']))
     results = []
@@ -493,11 +234,11 @@ def quantifyChrom(fig, canvas):
         newX = np.linspace(x_data[0], x_data[-1], 2500 * (x_data[-1] - x_data[0]))
         p0 = [np.max(y_data), x_data[np.argmax(y_data)], 0.1]
         try:
-            coeff, var_matrix = curve_fit(gaussFunction, x_data, y_data, p0)
-            newY = gaussFunction(newX, *coeff)
+            coeff, var_matrix = scipy.optimize.curve_fit(gauss_function, x_data, y_data, p0)
+            newY = gauss_function(newX, *coeff)
             # Get residuals
             for index, j in enumerate(time[low:high]):
-                residual += abs(intensity[index] - gaussFunction(j, *coeff)) ** 2
+                residual += abs(intensity[index] - gauss_function(j, *coeff)) ** 2
             residual = math.sqrt(residual)
         except RuntimeError:
             residual = "Nan"
@@ -590,7 +331,7 @@ def ultraPerformanceCalibration(measured, expected, minimum, maximum):
             func = f
 
     # Power Law
-    z = curve_fit(powerLaw, measured, expected)
+    z = scipy.optimize.curve_fit(powerLaw, measured, expected)
 
     # Check if the fitted power law function is monotone
     X_range = np.linspace(minimum, maximum, 10000)
@@ -604,12 +345,12 @@ def ultraPerformanceCalibration(measured, expected, minimum, maximum):
         RMS_buffer = math.sqrt(RMS_buffer)
         if RMS_buffer < RMS - min_improvement * RMS:
             RMS = RMS_buffer
-            func = PowerLawCall(*z[0])
+            func = util.PowerLawCall(*z[0])
 
     if use_interpolation:
         # Monotonic Piecewise Cubic Hermite Interpolating Polynomial
         RMS_buffer = []
-        f = PchipInterpolator(measured, expected)
+        f = scipy.interpolate.PchipInterpolator(measured, expected)
         for index, j in enumerate(measured):
             RMS_buffer.append((f(j) - expected[index]) ** 2)
         RMS_buffer = np.mean(RMS_buffer)
@@ -620,7 +361,7 @@ def ultraPerformanceCalibration(measured, expected, minimum, maximum):
 
         # Akima 1D Interpolator
         RMS_buffer = []
-        f = Akima1DInterpolator(measured, expected)
+        f = scipy.interpolate.Akima1DInterpolator(measured, expected)
         for index, j in enumerate(measured):
             RMS_buffer.append((f(j) - expected[index]) ** 2)
         RMS_buffer = np.mean(RMS_buffer)
