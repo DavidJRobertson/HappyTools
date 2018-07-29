@@ -114,8 +114,8 @@ def get_peak_list(fileName):
                 try:
                     peaks.append((str(line[0]), float(line[1]), float(line[2])))
                 except ValueError:
-                    if HappyTools.logging == True and HappyTools.logLevel > 1:
-                        with open(HappyTools.logFile, 'a') as fw:
+                    if PyChromat.logging == True and PyChromat.logLevel > 1:
+                        with open(PyChromat.logFile, 'a') as fw:
                             fw.write(str(datetime.now().replace(microsecond=0)) + "\tIgnoring line: " + str(
                                 line) + " from file: " + str(fileName) + "\n")
                     pass

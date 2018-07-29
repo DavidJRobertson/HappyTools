@@ -1,6 +1,6 @@
 from tkinter import StringVar, Tk, Toplevel, Label, W, Entry, OptionMenu, Button, E
 
-import HappyTools
+import PyChromat
 from gui.ToolTip import ToolTip
 
 slicepoints = 5
@@ -24,7 +24,7 @@ output = "summary.results"
 def get_settings():
     """Read the settings file.
 
-    This function opens the settings file (default is HappyTools.ini),
+    This function opens the settings file (default is PyChromat.ini),
     parses the lines of the settings file and takes the value from the
     settings file as a value for the changeable settings (e.g. the start
     variable can be read from the settings file).
@@ -32,7 +32,7 @@ def get_settings():
     Keyword arguments:
     none
     """
-    with open("HappyTools.ini", 'r') as fr:
+    with open("PyChromat.ini", 'r') as fr:
         for line in fr:
             chunks = line.strip('\n').split('\t')
             if chunks[0] == "points:":
@@ -129,7 +129,7 @@ def settings_popup():
             fw.write("peakDetectionEdgeValue:\t" + str(peakDetectionEdgeValueWindow.get()) + "\n")
 
     top = Tk.top = Toplevel()
-    top.title("HappyTools " + str(HappyTools.version) + " Settings")
+    top.title("PyChromat " + str(PyChromat.version) + " Settings")
     top.protocol("WM_DELETE_WINDOW", lambda: close())
 
     # General Settings
@@ -262,7 +262,7 @@ def settings_popup():
             "yield the lowest average intensity, the average of these data points is then used as background while " +
             "the standard deviation of these data points is used as the noise.")
     ToolTip(figureLabel,
-            "This setting specifies if HappyTools should create a figure for each integrated peak, " +
+            "This setting specifies if PyChromat should create a figure for each integrated peak, " +
             "showing the raw datapoints, background, noise, S/N and GPQ values. This is a very performance intensive " +
             "option and it is recommended to only use this on a subset of your samples (e.g. less than 25 samples).")
     ToolTip(minPeakLabel, "This setting specifies the minimum number of calibrant peaks that have to pass the " +
@@ -270,18 +270,18 @@ def settings_popup():
             "enough calibrant peaks passing the specified criteria will not be calibrated and excluded from further " +
             "quantitation.")
     ToolTip(minPeakSNLabel, "This setting specifies the minimum S/N value a calibrant peak must surpass to be " +
-            "included in the calibration. The actual S/N value that is determined by HappyTools depends heavily on " +
+            "included in the calibration. The actual S/N value that is determined by PyChromat depends heavily on " +
             "which method to determine signal and noise is used, the default method being rather conservative.")
     ToolTip(peakDetectionLabel, "This setting specifies the minimum intensity, relative to the main peak in " +
             "a chromatogram, that the peak detection algorithm will try to annotate. For example, a value of 0.01 " +
             "means that the program will attempt to annotate peaks until the next highest peak is below 1% of the " +
             "intensity of the main peak in the chromatogram.")
     ToolTip(peakDetectionEdgeLabel,
-            "This setting specifies if HappyTools will determine the integration window " +
+            "This setting specifies if PyChromat will determine the integration window " +
             "using either the full width at half maximum (FWHM) or a specified sigma value. The Sigma value has to be " +
             "specified in the field below if Sigma is the selected method.")
     ToolTip(peakDetectionEdgeValueLabel, "This setting specifies the Sigma value that will be used for " +
-            "determining the border of the integration window. A value of 1.0 means that HappyTools will set the " +
+            "determining the border of the integration window. A value of 1.0 means that PyChromat will set the " +
             "integration window so that 68.3% of the Gaussian peak will be quantified (2 Sigma = 95.5% and 3 sigma " +
             "= 99.7%). Please note that this value should depend on how complex the chromatogram is, for instance " +
             "a low sigma will yield better results in a complex chromatogram.")

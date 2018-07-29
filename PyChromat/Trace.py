@@ -337,7 +337,7 @@ class Trace(object):
         # Warn (if needed)
         if overlap_detected:
             print("Overlap detected!!")
-            # tkinter.messagebox.showinfo("Peak Overlap", "HappyTools detected overlap between several automatically " +
-            #                             "detected peaks. HappyTools has attempted to automatically re-adjust the borders to capture the " +
+            # tkinter.messagebox.showinfo("Peak Overlap", "PyChromat detected overlap between several automatically " +
+            #                             "detected peaks. PyChromat has attempted to automatically re-adjust the borders to capture the " +
             #                             "largest possible portion of the analytes, based on their signal intensities. However, please feel " +
             #                             "free to manually re-adjust the signals if desired in the peak list.")

@@ -18,7 +18,7 @@ from scipy.optimize import curve_fit
 from scipy.signal import argrelextrema
 
 import Chromatogram
-import HappyTools
+import PyChromat
 import gui
 from gui import settings
 from util import PowerLawCall, functions
@@ -87,8 +87,8 @@ def batchProcess(calFile, analFile, batchFolder):
         for index, file in enumerate(filesGrabbed):
             gui.update_progress_bar(progressbar, calPerc, index, len(filesGrabbed))
             try:
-                if HappyTools.logging == True and HappyTools.logLevel >= 1:
-                    with open(HappyTools.logFile, 'a') as fw:
+                if PyChromat.logging == True and PyChromat.logLevel >= 1:
+                    with open(PyChromat.logFile, 'a') as fw:
                         fw.write(str(datetime.now().replace(microsecond=0)) + "\tCalibrating file: " + str(file) + "\n")
                 data = {'Data': crap.openChrom(file), 'Name': file}
                 data['Data'] = baselineCorrection(data['Data'])
@@ -106,8 +106,8 @@ def batchProcess(calFile, analFile, batchFolder):
                 data['Name'] = os.path.join(batchFolder.get(), "calibrated_" + os.path.basename(data['Name']))
                 writeData(batchFolder, data)
             except ValueError:
-                if HappyTools.logging == True and HappyTools.logLevel >= 1:
-                    with open(HappyTools.logFile, 'a') as fw:
+                if PyChromat.logging == True and PyChromat.logLevel >= 1:
+                    with open(PyChromat.logFile, 'a') as fw:
                         fw.write(str(datetime.now().replace(microsecond=0)) + "\tIgnoring file: " + str(
                             file) + " for calibration\n")
                 pass
@@ -122,22 +122,22 @@ def batchProcess(calFile, analFile, batchFolder):
                         filesGrabbed.append(os.path.join(batchFolder.get(), file))
             for index, file in enumerate(filesGrabbed):
                 gui.update_progress_bar(progressbar2, intPerc, index, len(filesGrabbed))
-                if HappyTools.logging == True and HappyTools.logLevel >= 1:
-                    with open(HappyTools.logFile, 'a') as fw:
+                if PyChromat.logging == True and PyChromat.logLevel >= 1:
+                    with open(PyChromat.logFile, 'a') as fw:
                         fw.write(str(datetime.now().replace(microsecond=0)) + "\tQuantifying file: " + str(file) + "\n")
                 data = {'Data': crap.openChrom(file), 'Name': file}
                 batchQuantitationControl(data, analFile, batchFolder)
         except ValueError:
-            if HappyTools.logging == True and HappyTools.logLevel >= 1:
-                with open(HappyTools.logFile, 'a') as fw:
+            if PyChromat.logging == True and PyChromat.logLevel >= 1:
+                with open(PyChromat.logFile, 'a') as fw:
                     fw.write(str(datetime.now().replace(microsecond=0)) + "\tIgnoring file: " + str(
                         file) + " for quantitation. " \
                                 "The 'Start' or 'End' parameter do not match the specified analytes.\n")
             pass
         gui.update_progress_bar(progressbar2, intPerc, 1, 1)
 
-        if HappyTools.logging == True and HappyTools.logLevel >= 1:
-            with open(HappyTools.logFile, 'a') as fw:
+        if PyChromat.logging == True and PyChromat.logLevel >= 1:
+            with open(PyChromat.logFile, 'a') as fw:
                 fw.write(str(datetime.now().replace(microsecond=0)) + "\tCreating summary file\n")
         combineResults(batchFolder)
     end = datetime.now()
@@ -272,13 +272,13 @@ def batchQuantitationControl(data, analFile, batchFolder):
             fwhm = Chromatogram.fwhm(coeff)
             height = Chromatogram.gauss_function(fwhm['center'] + fwhm['width'], *coeff) + NOBAN['Background']
         except TypeError:
-            if HappyTools.logging == True and HappyTools.logLevel > 1:
-                with open(HappyTools.logFile, 'a') as fw:
+            if PyChromat.logging == True and PyChromat.logLevel > 1:
+                with open(PyChromat.logFile, 'a') as fw:
                     fw.write(str(datetime.now().replace(
                         microsecond=0)) + "\tNot enough data points to fit a Gaussian to peak: " + str(i[0]) + "\n")
         except RuntimeError:
-            if HappyTools.logging == True and HappyTools.logLevel > 1:
-                with open(HappyTools.logFile, 'a') as fw:
+            if PyChromat.logging == True and PyChromat.logLevel > 1:
+                with open(PyChromat.logFile, 'a') as fw:
                     fw.write(
                         str(datetime.now().replace(microsecond=0)) + "\tUnable to determine residuals for peak: " + str(
                             i[1]) + "\n")
@@ -296,8 +296,8 @@ def batchQuantitationControl(data, analFile, batchFolder):
 
         # Generate plot
         if functions.createFigure == "True" and residual != "NAN":
-            if HappyTools.logging == True and HappyTools.logLevel >= 1:
-                with open(HappyTools.logFile, 'a') as fw:
+            if PyChromat.logging == True and PyChromat.logLevel >= 1:
+                with open(PyChromat.logFile, 'a') as fw:
                     fw.write(str(datetime.now().replace(microsecond=0)) + "\tCreating figure for analyte: " + str(
                         i[0]) + "\n")
             details = {'fwhm': fwhm, 'height': height, 'NOBAN': NOBAN, 'newData': list(zip(newX, newY)),
@@ -351,7 +351,7 @@ def combineResults(batchFolder):
     # Construct the filename for the output
     utc_datetime = datetime.utcnow()
     s = utc_datetime.strftime("%Y-%m-%d-%H%MZ")
-    filename = s + "_" + HappyTools.output
+    filename = s + "_" + PyChromat.output
 
     # Construct header
     header = ""
@@ -367,9 +367,9 @@ def combineResults(batchFolder):
     # Write results, settings and version information
     with open(os.path.join(batchFolder.get(), filename), 'w') as fw:
         # Metadata
-        fw.write("HappyTools Settings\n")
-        fw.write("Version:\t" + str(HappyTools.version) + "\n")
-        fw.write("Build:\t" + str(HappyTools.build) + "\n")
+        fw.write("PyChromat Settings\n")
+        fw.write("Version:\t" + str(PyChromat.version) + "\n")
+        fw.write("Build:\t" + str(PyChromat.build) + "\n")
         fw.write("Start Time:\t" + str(settings.start) + "\n")
         fw.write("End Time:\t" + str(settings.end) + "\n")
         fw.write("Baseline Order:\t" + str(settings.baselineOrder) + "\n")
@@ -565,8 +565,8 @@ def performCalibration(timePairs, data):
             calibratedData = list(zip(f(time), intensity))
         else:
             calibratedData = None
-            if HappyTools.logging == True and HappyTools.logLevel >= 1:
-                with open(HappyTools.logFile, 'a') as fw:
+            if PyChromat.logging == True and PyChromat.logLevel >= 1:
+                with open(PyChromat.logFile, 'a') as fw:
                     fw.write(
                         str(datetime.now().replace(microsecond=0)) + "\tFile not calibrated due to lack of features, " +
                         str(len(timePairs)) + " passed the minimum S/N (" + str(functions.minPeakSN) + ") while " + str(
@@ -574,8 +574,8 @@ def performCalibration(timePairs, data):
                         " were needed\n")
     except NameError:
         calibratedData = None
-        if HappyTools.logging == True and HappyTools.logLevel >= 1:
-            with open(HappyTools.logFile, 'a') as fw:
+        if PyChromat.logging == True and PyChromat.logLevel >= 1:
+            with open(PyChromat.logFile, 'a') as fw:
                 fw.write(
                     str(datetime.now().replace(microsecond=0)) + "\tFile not calibrated due to lack of features, " +
                     str(len(timePairs)) + " passed the minimum S/N (" + str(functions.minPeakSN) + ") while " +
@@ -629,7 +629,7 @@ def plotOverview(pdf, peaks, data, time, intensity):
     """
     d = pdf.infodict()
     d['Title'] = 'PDF Report for: ' + str(os.path.splitext(os.path.basename(data['Name']))[0])
-    d['Author'] = 'HappyTools version: ' + str(HappyTools.version) + " build: " + str(HappyTools.build)
+    d['Author'] = 'PyChromat version: ' + str(PyChromat.version) + " build: " + str(PyChromat.build)
     d['CreationDate'] = datetime.now()
     low = bisect.bisect_left(time, settings.start)
     high = bisect.bisect_right(time, settings.end)
@@ -779,3 +779,9 @@ def batchPlotNorm(fig, canvas):
                 axes.plot(x_array, y_array, label=str(os.path.split(i[0])[-1]))
             axes.legend()
         canvas.draw()
+
+
+def update_progress_bar(bar, variable, index, length):
+    variable.set(str(int((float(index) / float(length)) * 100)) + "%")
+    bar["value"] = int((float(index) / float(length)) * 100)
+    bar.update()
