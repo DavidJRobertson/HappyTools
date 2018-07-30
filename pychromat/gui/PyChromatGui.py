@@ -15,7 +15,13 @@ class PyChromatGui(Window):
     def run(cls):
         root = tk.Tk()
         mw = cls(root)
-        root.mainloop()
+        # unfortunately we need this hack or scrolling sometimes causes crashes on Mac OS
+        while True:
+            try:
+                root.mainloop()
+                break
+            except UnicodeDecodeError:
+                pass
 
     def __init__(self, master):
         super().__init__(master)
