@@ -78,7 +78,7 @@ class Trace(object):
         """Return the background and noise.
 
         This function determines the average and the standard deviation or
-        the maximum difference of all segments of data, where each segment
+        the maximum difference of all segments of data, where each segmwent
         has the length specified in the slice points parameter.
         """
         background = sys.maxsize

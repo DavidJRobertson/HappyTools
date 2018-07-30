@@ -4,6 +4,8 @@ from gui.AboutWindow import AboutWindow
 from gui.BatchWindow import BatchWindow
 from gui.ChromatogramWindow import ChromatogramWindow
 
+from Chromatogram import Chromatogram
+
 
 class PyChromatGui(object):
     @classmethod
@@ -47,7 +49,8 @@ class PyChromatGui(object):
     def open_chromatogram_window(self):
         file = tk.filedialog.askopenfilename(title="Open Chromatogram File")
         if file:
-            ChromatogramWindow(tk.Toplevel(self.master), file)
+            chromatogram = Chromatogram(file)
+            ChromatogramWindow(tk.Toplevel(self.master), chromatogram)
 
 
 if __name__ == "__main__":
