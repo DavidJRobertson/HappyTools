@@ -1,9 +1,9 @@
-from tkinter import Tk, Toplevel, Label, W, Entry
+import tkinter as tk
 
-from matplotlib.backends.backend_tkagg import NavigationToolbar2TkAgg
+from matplotlib.backends.backend_tkagg import NavigationToolbar2Tk
 
 
-class CustomToolbar(NavigationToolbar2TkAgg):
+class CustomToolbar(NavigationToolbar2Tk):
     def __init__(self, canvas_, parent_):
         self.toolitems = (
             ('Home',        'Reset original view',                          'home',         'home'),
@@ -15,7 +15,7 @@ class CustomToolbar(NavigationToolbar2TkAgg):
             ('Subplots',    'Configure subplots',                           'subplots',     'configure_subplots'),
             ('Save',        'Save the figure',                              'filesave',     'save_figure'),
         )
-        NavigationToolbar2TkAgg.__init__(self, canvas_, parent_)
+        NavigationToolbar2Tk.__init__(self, canvas_, parent_)
 
     def plot_axes(self):
         def close():
@@ -30,19 +30,24 @@ class CustomToolbar(NavigationToolbar2TkAgg):
             self.canvas.draw()
             top.destroy()
         self.push_current()
-        top = Tk.top = Toplevel()
+        top = tk.Toplevel()
         top.title("Configure Axes")
-        top.protocol("WM_DELETE_WINDOW", lambda: close())
+        top.protocol("WM_DELETE_WINDOW", close)
 
-        x_label = Label(top, text="X-axis", font="bold")
-        x_label.grid(row=0, column=0, sticky=W)
-        x_min_window = Entry(top)
-        x_min_window.grid(row=0, column=1, sticky=W)
-        x_max_window = Entry(top)
-        x_max_window.grid(row=0, column=2, sticky=W)
-        y_label = Label(top, text="Y-axis", font="bold")
-        y_label.grid(row=1, column=0, sticky=W)
-        y_min_window = Entry(top)
-        y_min_window.grid(row=1, column=1, sticky=W)
-        y_max_window = Entry(top)
-        y_max_window.grid(row=1, column=2, sticky=W)
+        x_label = tk.Label(top, text="X-axis", font="bold")
+        x_label.grid(row=0, column=0, sticky=tk.W)
+
+        x_min_window = tk.Entry(top)
+        x_min_window.grid(row=0, column=1, sticky=tk.W)
+
+        x_max_window = tk.Entry(top)
+        x_max_window.grid(row=0, column=2, sticky=tk.W)
+
+        y_label = tk.Label(top, text="Y-axis", font="bold")
+        y_label.grid(row=1, column=0, sticky=tk.W)
+
+        y_min_window = tk.Entry(top)
+        y_min_window.grid(row=1, column=1, sticky=tk.W)
+
+        y_max_window = tk.Entry(top)
+        y_max_window.grid(row=1, column=2, sticky=tk.W)

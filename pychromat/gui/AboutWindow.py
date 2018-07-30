@@ -3,7 +3,7 @@ import tkinter as tk
 
 class AboutWindow(object):
     INFORMATION = ("PyChromat Version v0.03 by David Robertson <david@robertson.yt>\n\n"
-                   "Based on PyChromat by Bas Cornelis Jansen <bas.c.jansen@gmail.com>\n\n"
+                   "Based on HappyTools by Bas Cornelis Jansen <bas.c.jansen@gmail.com>\n\n"
                    "This software is released under the Apache 2.0 License. Full details regarding this license can "
                    "be found at the following URL: \n"
                    "http://www.apache.org/licenses/LICENSE-2.0")

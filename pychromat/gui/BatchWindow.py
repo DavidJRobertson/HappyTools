@@ -1,7 +1,7 @@
 import tkinter as tk
 import tkinter.filedialog
 from gui.ToolTip import ToolTip
-from gui.OutputWindow import OutputWindow
+from gui.BatchOutputWindow import BatchOutputWindow
 
 
 class BatchWindow(object):
@@ -61,7 +61,7 @@ class BatchWindow(object):
         self.master.destroy()
 
     def open_output_window(self):
-        OutputWindow(tk.Toplevel(self.master))
+        BatchOutputWindow(tk.Toplevel(self.master))
 
     def set_calibration_file(self):
         """Ask for the calibration file."""

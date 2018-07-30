@@ -88,30 +88,7 @@ def chromCalibration(fig, canvas):
 
 
 
-def open_file(fig, canvas):
-    """Open a file and show it on the canvas.
 
-    This function first asks the user to select a file via a file
-    dialog. The function will then call two other functions to write a
-    temporary file to the disk (writeData) and to plot the selected file
-    on the canvas (plotData).
-
-    Keyword arguments:
-    fig -- matplotlib figure object
-    canvas -- tkinter canvas object
-    """
-    file_path = tkinter.filedialog.askopenfilename()
-    if not file_path:
-        pass
-    else:
-        data = openChrom(file_path)
-        try:
-            data = data.tolist()
-        except AttributeError:
-            pass
-        if data:
-            writeData(data, os.path.split(file_path)[-1])
-            plotData(data, fig, canvas, file_path)
 
 
 def overlayQuantitationWindows(fig, canvas):

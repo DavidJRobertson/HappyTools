@@ -1,7 +1,7 @@
 import tkinter as tk
 
 
-class OutputWindow(object):
+class BatchOutputWindow(object):
     """Create a pop-up enabling output selection.
 
     This function creates a pop up box that allows the user to specify
@@ -10,19 +10,13 @@ class OutputWindow(object):
     (1).
 
     """
-
     def __init__(self, master):
-        # if outputWindow.get() == 1:
-        #     return
-        # outputWindow.set(1)
-
         self.master = master
         self.master.title("Output Options")
         self.master.resizable(width=False, height=False)
         self.master.grab_set()
         self.master.protocol("WM_DELETE_WINDOW", self.close)
 
-        #outputWindow = tk.IntVar()
         self.absInt = tk.IntVar()
         self.relInt = tk.IntVar()
         self.bckSub = tk.IntVar()
@@ -62,7 +56,6 @@ class OutputWindow(object):
         self.master.lift()
 
     def close(self):
-        #outputWindow.set(0)
         self.master.grab_release()
         self.master.destroy()
 

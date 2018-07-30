@@ -1,7 +1,6 @@
 import bisect
 import operator
 import sys
-import matplotlib.pyplot as plt
 import numpy as np
 import scipy
 import scipy.interpolate
@@ -43,36 +42,17 @@ class Trace(object):
         if '.txt' in file:
             return cls.from_file_txt(file, x_col=0, y_col=2)
         elif '.csv' in file:
-            return cls.from_file_txt(file)
+            return cls.from_file_txt(file, x_col=1, y_col=2)
         elif '.arw' in file:
             print("NOT IMPLEMENTED")
         else:
             print("Incorrect input file format, please choose a raw data 'txt' or 'arw' file.")
 
-    def plot(self, label="LABEL"):
-        plt.figure()
+    def x_range(self):
+        return min(self.x), max(self.x)
 
-        plt.plot(self.x, self.y, label=label)
-
-        plt.xlabel("Time [m]")
-        plt.ylabel("Intensity [au]")
-
-        plt.show()
-
-    def plot_o(self, fig, canvas, label=""):
-        fig.clear()
-
-        axes = fig.add_subplot(111)
-        axes.plot(self.x, self.y, label=label)
-
-        handles, labels = axes.get_legend_handles_labels()
-
-        fig.legend(handles, labels)
-
-        axes.get_xaxis().get_major_formatter().set_useOffset(False)
-        axes.set_xlabel("Time [m]")
-        axes.set_ylabel("Intensity [au]")
-        canvas.draw()
+    def y_range(self):
+        return min(self.y), max(self.y)
 
     def background_noise(self, slice_points=5, noise_method="RMS"):
         """Return the background and noise.

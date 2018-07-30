@@ -2,36 +2,37 @@ import os
 from Trace import Trace
 
 
-
 class Chromatogram(object):
+    """ The Chromatogram class encapsulates a collection of traces on the same timebase """
+
     def __init__(self, filename):
         self.filename = filename
+        raw = Trace.from_file(self.filename)
         self.traces = {
-            'raw': Trace.from_file(self.filename)
+            'raw': raw
         }
+        self.last_trace = raw
 
-    def plot_multi_data(self, fig, canvas, data):
-        """Plot all chromatograms in data on the canvas.
+        self.time_units = "min"
+        self.intensity_metric = "Absorbance"
+        self.intensity_units = "mAU"
 
-        This function first clears the canvas and then draws all the
-        chromatograms that are in the data list on the canvas.
+    def x_range(self, trace="raw"):
+        return self.traces[trace].x_range()
 
-        Keyword arguments:
-        fig -- matplotlib figure object
-        canvas -- tkinter canvas object
-        data -- list of tuples, consisting of two numbers per tuple
-        """
-        fig.clear()
-        axes = fig.add_subplot(111)
-        for i in data:
-            xd = []
-            yd = []
-            for j in i[1]:
-                xd.append(j[0])
-                yd.append(j[1])
-            axes.plot(xd, yd, label=os.path.split(i[0])[-1])
-        axes.set_xlabel("Time [m]")
-        axes.set_ylabel("Intensity [au]")
-        handles, labels = axes.get_legend_handles_labels()
-        fig.legend(handles, labels)
-        canvas.draw()
+    def y_range(self, trace="raw"):
+        return self.traces[trace].y_range()
+
+    def smooth(self):
+        new_trace = self.last_trace.smooth()
+        self.traces['smoothed'] = new_trace
+        self.last_trace = new_trace
+
+    def detect_baseline(self):
+        new_trace = self.last_trace.detect_baseline()
+        self.traces['baseline'] = new_trace
+
+    def correct_baseline(self):
+        new_trace = self.last_trace.correct_baseline()
+        self.traces['corrected-baseline'] = new_trace
+        self.last_trace = new_trace
