@@ -1,15 +1,16 @@
 import tkinter as tk
+import tkinter.ttk as ttk
 import tkinter.filedialog
 import os
 from gui.AboutWindow import AboutWindow
 from gui.BatchWindow import BatchWindow
 from gui.ChromatogramWindow import ChromatogramWindow
 from gui.SettingsWindow import SettingsWindow
-
+from gui.Window import Window
 from Chromatogram import Chromatogram
 
 
-class PyChromatGui(object):
+class PyChromatGui(Window):
     @classmethod
     def run(cls):
         root = tk.Tk()
@@ -17,7 +18,8 @@ class PyChromatGui(object):
         root.mainloop()
 
     def __init__(self, master):
-        self.master = master
+        super().__init__(master)
+
         self.master.title("PyChromat")
         self.master.resizable(width=False, height=False)
 
@@ -25,23 +27,18 @@ class PyChromatGui(object):
         if os.path.isfile(icon_file):
             self.master.iconbitmap(default=icon_file)
 
-        self.frame = tk.Frame(self.master)
-
-        self.button1 = tk.Button(self.frame, text='About PyChromat', width=25, command=self.open_about_window)
+        self.button1 = ttk.Button(self, text='About PyChromat', width=25, command=self.open_about_window)
         self.button1.pack()
 
-        self.button2 = tk.Button(self.frame, text='Batch process', width=25, command=self.open_batch_window)
+        self.button2 = ttk.Button(self, text='Batch process', width=25, command=self.open_batch_window)
         self.button2.pack()
 
-        self.button3 = tk.Button(self.frame, text='Open chromatogram', width=25, command=self.open_chromatogram_window)
+        self.button3 = ttk.Button(self, text='Open chromatogram', width=25, command=self.open_chromatogram_window)
         self.button3.pack()
 
-        self.button4 = tk.Button(self.frame, text='Settings', width=25, command=self.open_settings_window)
+        self.button4 = ttk.Button(self, text='Settings', width=25, command=self.open_settings_window)
         self.button4.pack()
 
-        self.frame.pack()
-
-        self.master.lift()
         self.master.attributes("-topmost", True)
         self.master.attributes("-topmost", False)
 

@@ -1,5 +1,6 @@
 # See https://stackoverflow.com/a/36221216
 import tkinter as tk
+import tkinter.ttk as ttk
 
 
 class ToolTip(object):
@@ -44,7 +45,7 @@ class ToolTip(object):
         # Leave only the label and removes the app window
         self.tw.wm_overrideredirect(True)
         self.tw.wm_geometry("+%d+%d" % (x, y))
-        label = tk.Label(self.tw, text=self.text, justify='left',
+        label =ttk.Label(self.tw, text=self.text, justify='left',
                          background="#ffffff", relief='solid', borderwidth=1,
                          wraplength=self.wraplength)
         label.pack(ipadx=1)

@@ -1,4 +1,7 @@
 import tkinter as tk
+import tkinter.ttk as ttk
+
+from gui.Window import Window
 from gui.CustomToolbar import CustomToolbar
 
 import matplotlib
@@ -7,22 +10,34 @@ import matplotlib.image
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
 
-class ChromatogramWindow(object):
+
+class ChromatogramWindow(Window):
     def __init__(self, master, chromatogram):
-        self.master = master
+        super().__init__(master)
+
         self.chromatogram = chromatogram
 
         self.master.title("Chromatogram: "+self.chromatogram.filename)
         self.master.protocol("WM_DELETE_WINDOW", self.close)
-        self.frame = tk.Frame(self.master)
-        self.frame.pack()
         self.master.lift()
 
+        self.pw = ttk.PanedWindow(self, orient=tk.HORIZONTAL)
+
+        frame1 = ttk.Frame(self.pw)
         self.fig = matplotlib.figure.Figure(figsize=(12, 6))
-        self.canvas = FigureCanvasTkAgg(self.fig, master=self.master)
-        self.toolbar = CustomToolbar(self.canvas, self.master)
+        self.canvas = FigureCanvasTkAgg(self.fig, master=frame1)
+        self.toolbar = CustomToolbar(self.canvas, frame1)
         self.canvas.get_tk_widget().pack(fill=tk.BOTH, expand=tk.YES)
         self.canvas.draw()
+        self.pw.add(frame1)
+
+        frame2 = ttk.Frame(self.pw)
+        b = ttk.Button(frame2, text="button here")
+        b.pack()
+        self.pw.add(frame2)
+
+        self.pw.pack()
+
 
         # background_file = os.path.join(os.path.dirname(__file__), 'assets', 'UI.png')
         # if os.path.isfile(background_file):

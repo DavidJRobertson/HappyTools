@@ -1,10 +1,13 @@
 import tkinter as tk
+import tkinter.ttk as ttk
+from gui.Window import Window
 from gui.ToolTip import ToolTip
 
 
-class SettingsWindow(object):
+class SettingsWindow(Window):
     def __init__(self, master):
-        self.master = master
+        super().__init__(master)
+
         self.master.title("PyChromat Settings")
         self.master.resizable(width=False, height=False)
         self.master.protocol("WM_DELETE_WINDOW", self.close)
@@ -15,79 +18,79 @@ class SettingsWindow(object):
         #self.peakDetectionEdgeVar.set(peakDetectionEdge)
 
         # General Settings
-        general_label = tk.Label(self.master, text="General Settings", font=("Helvetica", 16))
+        general_label =ttk.Label(self, text="General Settings", font=("Helvetica", 16))
         general_label.grid(row=0, columnspan=2, sticky=tk.W)
 
-        start_label = tk.Label(self.master, text="Start Time", font=("Helvetica", 12))
+        start_label =ttk.Label(self, text="Start Time", font=("Helvetica", 12))
         start_label.grid(row=1, column=0, sticky=tk.W)
 
-        start_window = tk.Entry(self.master)
+        start_window = ttk.Entry(self)
         #start_window.insert(0, start)
         start_window.grid(row=1, column=1, sticky=tk.W)
 
-        end_label = tk.Label(self.master, text="End Time", font=("Helvetica", 12))
+        end_label =ttk.Label(self, text="End Time", font=("Helvetica", 12))
         end_label.grid(row=2, column=0, sticky=tk.W)
 
-        end_window = tk.Entry(self.master)
+        end_window = ttk.Entry(self)
         #end_window.insert(0, end)
         end_window.grid(row=2, column=1, sticky=tk.W)
 
         # Peak Detecti#on Settings
-        peak_detection_label = tk.Label(self.master, text="Peak Detection Settings", font=("Helvetica", 16))
+        peak_detection_label =ttk.Label(self, text="Peak Detection Settings", font=("Helvetica", 16))
         peak_detection_label.grid(row=3, columnspan=2, sticky=tk.W)
 
-        peak_detection_label = tk.Label(self.master, text="Minimum Intensity", font=("Helvetica", 12))
+        peak_detection_label =ttk.Label(self, text="Minimum Intensity", font=("Helvetica", 12))
         peak_detection_label.grid(row=4, column=0, sticky=tk.W)
-        peak_detection = tk.Entry(self.master)
+        peak_detection = ttk.Entry(self)
         #peak_detection.insert(0, peakDetectionMin)
         peak_detection.grid(row=4, column=1, sticky=tk.W)
 
-        peak_detection_edge_label = tk.Label(self.master, text="Edge Method", font=("Helvetica", 12))
+        peak_detection_edge_label =ttk.Label(self, text="Edge Method", font=("Helvetica", 12))
         peak_detection_edge_label.grid(row=5, column=0, sticky=tk.W)
-        peak_detection_edge_window = tk.OptionMenu(self.master, self.peakDetectionEdgeVar, "Sigma", "FWHM")
+        peak_detection_edge_window = tk.OptionMenu(self, self.peakDetectionEdgeVar, "Sigma", "FWHM")
         peak_detection_edge_window.grid(row=5, column=1, sticky=tk.W)
 
-        peak_detection_edge_value_label = tk.Label(self.master, text="Sigma Value", font=("Helvetica", 12))
+        peak_detection_edge_value_label =ttk.Label(self, text="Sigma Value", font=("Helvetica", 12))
         peak_detection_edge_value_label.grid(row=6, column=0, sticky=tk.W)
-        peak_detection_edge_value_window = tk.Entry(self.master)
+        peak_detection_edge_value_window = ttk.Entry(self)
         #peak_detection_edge_value_window.insert(0, peakDetectionEdgeValue)
         peak_detection_edge_value_window.grid(row=6, column=1, sticky=tk.W)
 
         # Calibration Settings
-        calibration_label = tk.Label(self.master, text="Calibration Settings", font=("Helvetica", 16))
+        calibration_label =ttk.Label(self, text="Calibration Settings", font=("Helvetica", 16))
         calibration_label.grid(row=7, columnspan=2, sticky=tk.W)
 
-        min_peak_label = tk.Label(self.master, text="Minimum Peaks", font=("Helvetica", 12))
+        min_peak_label =ttk.Label(self, text="Minimum Peaks", font=("Helvetica", 12))
         min_peak_label.grid(row=8, column=0, sticky=tk.W)
-        min_peak_window = tk.Entry(self.master)
+        min_peak_window = ttk.Entry(self)
         # min_peak_window.insert(0, minPeaks)
         min_peak_window.grid(row=8, column=1, sticky=tk.W)
 
-        min_peak_sn_label = tk.Label(self.master, text="Minimum S/N", font=("Helvetica", 12))
+        min_peak_sn_label =ttk.Label(self, text="Minimum S/N", font=("Helvetica", 12))
         min_peak_sn_label.grid(row=9, column=0, sticky=tk.W)
-        min_peak_sn_window = tk.Entry(self.master)
+        min_peak_sn_window = ttk.Entry(self)
         # min_peak_sn_window.insert(0, minPeakSN)
         min_peak_sn_window.grid(row=9, column=1, sticky=tk.W)
 
         # Quantitation Settings
-        quantitation_label = tk.Label(self.master, text="Quantitation Settings", font=("Helvetica", 16))
+        quantitation_label =ttk.Label(self, text="Quantitation Settings", font=("Helvetica", 16))
         quantitation_label.grid(row=10, columnspan=2, sticky=tk.W)
 
-        points_label = tk.Label(self.master, text="Datapoints", font=("Helvetica", 12))
+        points_label =ttk.Label(self, text="Datapoints", font=("Helvetica", 12))
         points_label.grid(row=11, column=0, sticky=tk.W)
-        points_window = tk.Entry(self.master)
+        points_window = ttk.Entry(self)
         #points_window.insert(0, points)
         points_window.grid(row=11, column=1, sticky=tk.W)
 
-        baseline_order_label = tk.Label(self.master, text="Baseline Order", font=("Helvetica", 12))
+        baseline_order_label =ttk.Label(self, text="Baseline Order", font=("Helvetica", 12))
         baseline_order_label.grid(row=12, column=0, sticky=tk.W)
-        baseline_order_window = tk.Entry(self.master)
+        baseline_order_window = ttk.Entry(self)
         #baseline_order_window.insert(0, baselineOrder)
         baseline_order_window.grid(row=12, column=1, sticky=tk.W)
 
-        background_window_label = tk.Label(self.master, text="Background Window", font=("Helvetica", 12))
+        background_window_label =ttk.Label(self, text="Background Window", font=("Helvetica", 12))
         background_window_label.grid(row=13, column=0, sticky=tk.W)
-        background_window_window = tk.Entry(self.master)
+        background_window_window = ttk.Entry(self)
         #background_window_window.insert(0, backgroundWindow)
         background_window_window.grid(row=13, column=1, sticky=tk.W)
 
@@ -97,23 +100,23 @@ class SettingsWindow(object):
         # nobanWindow.insert(0, nobanStart)
         # nobanWindow.grid(row=14, column=1, sticky=W)
 
-        slicepoints_label = tk.Label(self.master, text="MT Slice points", font=("Helvetica", 12))
+        slicepoints_label =ttk.Label(self, text="MT Slice points", font=("Helvetica", 12))
         slicepoints_label.grid(row=15, column=0, sticky=tk.W)
-        slicepoints_window = tk.Entry(self.master)
+        slicepoints_window = ttk.Entry(self)
         #slicepoints_window.insert(0, slicepoints)
         slicepoints_window.grid(row=15, column=1, sticky=tk.W)
 
-        figure_label = tk.Label(self.master, text="Create figure for each analyte", font=("Helvetica", 12))
+        figure_label =ttk.Label(self, text="Create figure for each analyte", font=("Helvetica", 12))
         figure_label.grid(row=16, column=0, sticky=tk.W)
         options = ["True", "False"]
-        figure_window = tk.OptionMenu(self.master, self.figureVariable, *options)
+        figure_window = tk.OptionMenu(self, self.figureVariable, *options)
         figure_window.grid(row=16, column=1, sticky=tk.W)
 
         # Close/Save Buttons
-        save_button = tk.Button(self.master, text="Save", command=self.save)
+        save_button = ttk.Button(self, text="Save", command=self.save)
         save_button.grid(row=17, column=0, sticky=tk.W)
 
-        close_button = tk.Button(self.master, text="Close", command=self.close)
+        close_button = ttk.Button(self, text="Close", command=self.close)
         close_button.grid(row=17, column=1, sticky=tk.E)
 
         # Tooltips
@@ -171,8 +174,6 @@ class SettingsWindow(object):
                 "= 99.7%). Please note that this value should depend on how complex the chromatogram is, for instance " +
                 "a low sigma will yield better results in a complex chromatogram.")
 
-        self.master.lift()
-
     def close(self):
         self.master.destroy()
     #     global points
@@ -204,7 +205,6 @@ class SettingsWindow(object):
     #     peakDetectionEdge = str(peakDetectionEdgeVar.get())
     #     peakDetectionEdgeValue = float(peakDetectionEdgeValueWindow.get())
     #     self.master.destroy()
-
 
     def save(self):
         pass
