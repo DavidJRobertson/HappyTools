@@ -10,7 +10,7 @@ class ToolTip(object):
 
     def __init__(self, widget, text):
         self.waittime = 500  # miliseconds
-        self.wraplength = 180  # pixels
+        self.wraplength = 250  # pixels
         self.widget = widget
         self.text = text
         self.widget.bind("<Enter>", self.enter)
@@ -45,9 +45,9 @@ class ToolTip(object):
         # Leave only the label and removes the app window
         self.tw.wm_overrideredirect(True)
         self.tw.wm_geometry("+%d+%d" % (x, y))
-        label =ttk.Label(self.tw, text=self.text, justify='left',
+        label = ttk.Label(self.tw, text=self.text, justify='left',
                          background="#ffffff", relief='solid', borderwidth=1,
-                         wraplength=self.wraplength)
+                         wraplength=self.wraplength, padding=5)
         label.pack(ipadx=1)
 
     def hidetip(self):

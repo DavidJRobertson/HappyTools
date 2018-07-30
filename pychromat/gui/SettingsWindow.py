@@ -1,7 +1,8 @@
 import tkinter as tk
 import tkinter.ttk as ttk
-from gui.Window import Window
+
 from gui.ToolTip import ToolTip
+from gui.Window import Window
 
 
 class SettingsWindow(Window):
@@ -12,112 +13,121 @@ class SettingsWindow(Window):
         self.master.resizable(width=False, height=False)
         self.master.protocol("WM_DELETE_WINDOW", self.close)
 
-        self.figureVariable = tk.StringVar()
-        #self.figureVariable.set(createFigure)
-        self.peakDetectionEdgeVar = tk.StringVar()
-        #self.peakDetectionEdgeVar.set(peakDetectionEdge)
+        self.var_fig_per_analyte = tk.BooleanVar()
+        self.var_fig_per_analyte.set(0)
+
+        self.var_peak_detection_edge = tk.StringVar()
+        # self.tkvar_peak_detection_edge.set(peakDetectionEdge)
 
         # General Settings
-        general_label =ttk.Label(self, text="General Settings", font=("Helvetica", 16))
+        general_label = ttk.Label(self, text="General Settings", font=("Helvetica", 16))
         general_label.grid(row=0, columnspan=2, sticky=tk.W)
 
-        start_label =ttk.Label(self, text="Start Time", font=("Helvetica", 12))
+        start_label = ttk.Label(self, text="Start Time")
         start_label.grid(row=1, column=0, sticky=tk.W)
 
         start_window = ttk.Entry(self)
-        #start_window.insert(0, start)
+        # start_window.insert(0, start)
         start_window.grid(row=1, column=1, sticky=tk.W)
 
-        end_label =ttk.Label(self, text="End Time", font=("Helvetica", 12))
+        end_label = ttk.Label(self, text="End Time")
         end_label.grid(row=2, column=0, sticky=tk.W)
 
         end_window = ttk.Entry(self)
-        #end_window.insert(0, end)
+        # end_window.insert(0, end)
         end_window.grid(row=2, column=1, sticky=tk.W)
 
         # Peak Detecti#on Settings
-        peak_detection_label =ttk.Label(self, text="Peak Detection Settings", font=("Helvetica", 16))
+        peak_detection_label = ttk.Label(self, text="Peak Detection Settings", font=("Helvetica", 16), padding="0 25 0 0")
         peak_detection_label.grid(row=3, columnspan=2, sticky=tk.W)
 
-        peak_detection_label =ttk.Label(self, text="Minimum Intensity", font=("Helvetica", 12))
+        peak_detection_label = ttk.Label(self, text="Minimum Intensity")
         peak_detection_label.grid(row=4, column=0, sticky=tk.W)
         peak_detection = ttk.Entry(self)
-        #peak_detection.insert(0, peakDetectionMin)
+        # peak_detection.insert(0, peakDetectionMin)
         peak_detection.grid(row=4, column=1, sticky=tk.W)
 
-        peak_detection_edge_label =ttk.Label(self, text="Edge Method", font=("Helvetica", 12))
+        peak_detection_edge_label = ttk.Label(self, text="Edge Method")
         peak_detection_edge_label.grid(row=5, column=0, sticky=tk.W)
-        peak_detection_edge_window = tk.OptionMenu(self, self.peakDetectionEdgeVar, "Sigma", "FWHM")
-        peak_detection_edge_window.grid(row=5, column=1, sticky=tk.W)
+        peak_detection_edge_frame = ttk.Frame(self)
+        peak_detection_edge_radio_sigma = ttk.Radiobutton(peak_detection_edge_frame, text="Sigma", variable=self.var_peak_detection_edge, value="Sigma")
+        peak_detection_edge_radio_sigma.pack(side=tk.LEFT)
+        peak_detection_edge_radio_fwhm = ttk.Radiobutton(peak_detection_edge_frame, text="FWHM", variable=self.var_peak_detection_edge, value="FWHM")
+        peak_detection_edge_radio_fwhm.pack(side=tk.RIGHT)
+        peak_detection_edge_frame.grid(row=5, column=1, sticky=tk.E+tk.W)
 
-        peak_detection_edge_value_label =ttk.Label(self, text="Sigma Value", font=("Helvetica", 12))
+
+        peak_detection_edge_value_label = ttk.Label(self, text="Sigma Value")
         peak_detection_edge_value_label.grid(row=6, column=0, sticky=tk.W)
         peak_detection_edge_value_window = ttk.Entry(self)
-        #peak_detection_edge_value_window.insert(0, peakDetectionEdgeValue)
+        # peak_detection_edge_value_window.insert(0, peakDetectionEdgeValue)
         peak_detection_edge_value_window.grid(row=6, column=1, sticky=tk.W)
 
         # Calibration Settings
-        calibration_label =ttk.Label(self, text="Calibration Settings", font=("Helvetica", 16))
+        calibration_label = ttk.Label(self, text="Calibration Settings", font=("Helvetica", 16), padding="0 25 0 0")
         calibration_label.grid(row=7, columnspan=2, sticky=tk.W)
 
-        min_peak_label =ttk.Label(self, text="Minimum Peaks", font=("Helvetica", 12))
+        min_peak_label = ttk.Label(self, text="Minimum Peaks")
         min_peak_label.grid(row=8, column=0, sticky=tk.W)
         min_peak_window = ttk.Entry(self)
         # min_peak_window.insert(0, minPeaks)
         min_peak_window.grid(row=8, column=1, sticky=tk.W)
 
-        min_peak_sn_label =ttk.Label(self, text="Minimum S/N", font=("Helvetica", 12))
+        min_peak_sn_label = ttk.Label(self, text="Minimum S/N")
         min_peak_sn_label.grid(row=9, column=0, sticky=tk.W)
         min_peak_sn_window = ttk.Entry(self)
         # min_peak_sn_window.insert(0, minPeakSN)
         min_peak_sn_window.grid(row=9, column=1, sticky=tk.W)
 
         # Quantitation Settings
-        quantitation_label =ttk.Label(self, text="Quantitation Settings", font=("Helvetica", 16))
+        quantitation_label = ttk.Label(self, text="Quantitation Settings", font=("Helvetica", 16), padding="0 25 0 0")
         quantitation_label.grid(row=10, columnspan=2, sticky=tk.W)
 
-        points_label =ttk.Label(self, text="Datapoints", font=("Helvetica", 12))
+        points_label = ttk.Label(self, text="Datapoints")
         points_label.grid(row=11, column=0, sticky=tk.W)
         points_window = ttk.Entry(self)
-        #points_window.insert(0, points)
+        # points_window.insert(0, points)
         points_window.grid(row=11, column=1, sticky=tk.W)
 
-        baseline_order_label =ttk.Label(self, text="Baseline Order", font=("Helvetica", 12))
+        baseline_order_label = ttk.Label(self, text="Baseline Order")
         baseline_order_label.grid(row=12, column=0, sticky=tk.W)
         baseline_order_window = ttk.Entry(self)
-        #baseline_order_window.insert(0, baselineOrder)
+        # baseline_order_window.insert(0, baselineOrder)
         baseline_order_window.grid(row=12, column=1, sticky=tk.W)
 
-        background_window_label =ttk.Label(self, text="Background Window", font=("Helvetica", 12))
+        background_window_label = ttk.Label(self, text="Background Window")
         background_window_label.grid(row=13, column=0, sticky=tk.W)
         background_window_window = ttk.Entry(self)
-        #background_window_window.insert(0, backgroundWindow)
+        # background_window_window.insert(0, backgroundWindow)
         background_window_window.grid(row=13, column=1, sticky=tk.W)
 
-        # nobanLabel = Label(top, text="NOBAN Start", font=("Helvetica", 12))
+        # nobanLabel = Label(top, text="NOBAN Start")
         # nobanLabel.grid(row=14, column=0, sticky=W)
         # nobanWindow = Entry(top)
         # nobanWindow.insert(0, nobanStart)
         # nobanWindow.grid(row=14, column=1, sticky=W)
 
-        slicepoints_label =ttk.Label(self, text="MT Slice points", font=("Helvetica", 12))
+        slicepoints_label = ttk.Label(self, text="MT Slice points")
         slicepoints_label.grid(row=15, column=0, sticky=tk.W)
         slicepoints_window = ttk.Entry(self)
-        #slicepoints_window.insert(0, slicepoints)
+        # slicepoints_window.insert(0, slicepoints)
         slicepoints_window.grid(row=15, column=1, sticky=tk.W)
 
-        figure_label =ttk.Label(self, text="Create figure for each analyte", font=("Helvetica", 12))
-        figure_label.grid(row=16, column=0, sticky=tk.W)
-        options = ["True", "False"]
-        figure_window = tk.OptionMenu(self, self.figureVariable, *options)
-        figure_window.grid(row=16, column=1, sticky=tk.W)
+        figure_label = ttk.Label(self, text="Create figure for each analyte?")
+        figure_label.grid(row=16, column=0, sticky=tk.W, ipadx=5)
+        figure_radio_frame = ttk.Frame(self)
+        figure_radio_yes = ttk.Radiobutton(figure_radio_frame, text="Yes", variable=self.var_fig_per_analyte, value=1)
+        figure_radio_yes.pack(side=tk.LEFT)
+        figure_radio_no = ttk.Radiobutton(figure_radio_frame, text="No", variable=self.var_fig_per_analyte, value=0)
+        figure_radio_no.pack(side=tk.RIGHT)
+        figure_radio_frame.grid(row=16, column=1, sticky=tk.E+tk.W)
 
         # Close/Save Buttons
         save_button = ttk.Button(self, text="Save", command=self.save)
-        save_button.grid(row=17, column=0, sticky=tk.W)
+        save_button.grid(row=17, column=0, sticky=tk.E+tk.W, pady="25 0")
 
         close_button = ttk.Button(self, text="Close", command=self.close)
-        close_button.grid(row=17, column=1, sticky=tk.E)
+        close_button.grid(row=17, column=1, sticky=tk.E+tk.W, pady="25 0")
 
         # Tooltips
         ToolTip(points_label, "The number of data points that is used to determine the baseline. Specifically, " +
@@ -176,6 +186,7 @@ class SettingsWindow(Window):
 
     def close(self):
         self.master.destroy()
+
     #     global points
     #     global start
     #     global end
@@ -225,10 +236,3 @@ class SettingsWindow(Window):
     #         fw.write("peakDetectionMin:\t" + str(peakDetection.get()) + "\n")
     #         fw.write("peakDetectionEdge:\t" + str(peakDetectionEdgeVar.get()) + "\n")
     #         fw.write("peakDetectionEdgeValue:\t" + str(peakDetectionEdgeValueWindow.get()) + "\n")
-
-
-
-
-
-
-
