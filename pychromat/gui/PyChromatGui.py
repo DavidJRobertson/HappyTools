@@ -29,6 +29,10 @@ class PyChromatGui(Window):
         self.master.title("PyChromat")
         self.master.resizable(width=False, height=False)
 
+        # override the default menu
+        menu = tk.Menu(self.master)
+        self.master.config(menu=menu)
+
         icon_file = os.path.join(os.path.dirname(__file__), 'assets', 'Icon.ico')
         if os.path.isfile(icon_file):
             self.master.iconbitmap(default=icon_file)

@@ -10,7 +10,6 @@ import matplotlib.image
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
 
-
 class ChromatogramWindow(Window):
     def __init__(self, master, chromatogram):
         super().__init__(master)
@@ -23,18 +22,28 @@ class ChromatogramWindow(Window):
 
         self.pw = ttk.PanedWindow(self, orient=tk.HORIZONTAL)
 
-        frame1 = ttk.Frame(self.pw)
+        canvas_pane = ttk.Frame(self.pw)
         self.fig = matplotlib.figure.Figure(figsize=(12, 6))
-        self.canvas = FigureCanvasTkAgg(self.fig, master=frame1)
-        self.toolbar = CustomToolbar(self.canvas, frame1)
+        self.canvas = FigureCanvasTkAgg(self.fig, master=canvas_pane)
+        self.toolbar = CustomToolbar(self.canvas, canvas_pane)
         self.canvas.get_tk_widget().pack(fill=tk.BOTH, expand=tk.YES)
         self.canvas.draw()
-        self.pw.add(frame1)
+        self.pw.add(canvas_pane)
 
-        frame2 = ttk.Frame(self.pw)
-        b = ttk.Button(frame2, text="button here")
-        b.pack()
-        self.pw.add(frame2)
+        right_pane = ttk.Frame(self.pw)
+        traces_label = ttk.Label(right_pane, text="Traces")
+        traces_label.pack(anchor=tk.W)
+
+        traces_lb_frame = ttk.Frame(right_pane)
+        traces_lb_scrollbar = ttk.Scrollbar(traces_lb_frame, orient=tk.VERTICAL)
+        self.traces_listbox = tk.Listbox(traces_lb_frame, selectmode=tk.MULTIPLE, exportselection=tk.NO, yscrollcommand=traces_lb_scrollbar.set)
+        traces_lb_scrollbar.config(command=self.traces_listbox.yview)
+        traces_lb_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        self.traces_listbox.pack(side=tk.LEFT, fill=tk.BOTH, expand=tk.YES)
+        traces_lb_frame.pack(fill=tk.X, expand=tk.YES, anchor=tk.N)
+        self.traces_selected = []
+        self.poll_traces_listbox()
+        self.pw.add(right_pane)
 
         self.pw.pack()
 
@@ -55,7 +64,6 @@ class ChromatogramWindow(Window):
         menu.add_cascade(label="File", menu=file_menu)
         file_menu.add_command(label="Open Chromatogram", command=lambda: None)
         file_menu.add_command(label="Save Chromatogram", command=lambda: None)
-        2
         file_menu.add_command(label="Compare Chromatogram", command=lambda: None)
         file_menu.add_command(label="Settings", command=lambda: None)
         file_menu.add_command(label="About PyChromat", command=lambda: None)
@@ -97,11 +105,41 @@ class ChromatogramWindow(Window):
         self.plot_chromatogram()
 
     def plot_chromatogram(self):
-        """Plot all traces  on the canvas."""
+        """Plot all traces  on the canvas. Update the traces listbox. """
+
+        # if traces deleted, then remove them from the listbox
+        trace_entries = self.traces_listbox.get(0, tk.END)
+        to_delete = []
+        for entry in trace_entries:
+            if entry not in self.chromatogram.traces.keys():
+                to_delete.append(entry)
+        for del_entry in to_delete:
+            trace_entries = self.traces_listbox.get(0, tk.END)
+            for index, entry in trace_entries:
+                if entry == del_entry:
+                    self.traces_listbox.delete(index)
+                    break
+
+        # if new traces added, insert them into the listbox
+        for label, trace in self.chromatogram.traces.items():
+            if label not in trace_entries:
+                self.traces_listbox.insert(tk.END, label)
+                self.traces_listbox.selection_set(tk.END)
+
+        # now get a list of selected (visible) traces to plot
+        visible_traces = []
+        for index in self.traces_listbox.curselection():
+            visible_traces.append(self.traces_listbox.get(index))
+
+
         self.fig.clear()
         axes = self.fig.add_subplot(111)
 
-        for label, trace in self.chromatogram.traces.items():
+        #for label, trace in self.chromatogram.traces.items():
+        #    axes.plot(trace.x, trace.y, label=label, linewidth=0.75)
+
+        for label in visible_traces:
+            trace = self.chromatogram.traces[label]
             axes.plot(trace.x, trace.y, label=label, linewidth=0.75)
 
         axes.get_xaxis().get_major_formatter().set_useOffset(False)
@@ -121,3 +159,10 @@ class ChromatogramWindow(Window):
 
     def close(self):
         self.master.destroy()
+
+    def poll_traces_listbox(self):
+        now = self.traces_listbox.curselection()
+        if now != self.traces_selected:
+            self.plot_chromatogram()
+            self.traces_selected = now
+        self.after(100, self.poll_traces_listbox)
